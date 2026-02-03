@@ -4,6 +4,9 @@ import styled from 'styled-components';
 import './global.css';
 
 import Home from './pages/Home.jsx';
+import Transactions from './pages/Transactions.jsx';
+import Accounts from './pages/Accounts.jsx';
+import Account from './pages/Account.jsx';
 
 import ScrollToTop from './parts/Scroll.jsx';
 
@@ -15,15 +18,6 @@ import {
 
 const Wrapper = styled.div`
   font-family: 'Inter', sans-serif;
-
-  .top-container {
-    padding-left: 80px;
-    padding-right: 80px;
-  }
-
-  .mt40 {
-    margin-top: 40px;
-  }
 
   button, a.button {
     border: none;
@@ -60,7 +54,7 @@ const Wrapper = styled.div`
 
   a {
     text-decoration: none;
-    color: initial;
+    color: inherit;
   }
 `;
 
@@ -81,6 +75,15 @@ class App extends React.Component {
         <Router>
           <ScrollToTop></ScrollToTop>
           <Switch>
+            <Route path="/accounts/:id" exact>
+              <Account></Account>
+            </Route>
+            <Route path="/accounts" exact>
+              <Accounts></Accounts>
+            </Route>
+            <Route path="/transactions" exact>
+              <Transactions></Transactions>
+            </Route>
             <Route path="/">
               <Home></Home>
             </Route>
