@@ -1,0 +1,42 @@
+name: release
+on:
+  release:
+    types: [created]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.2.0
+      - uses: actions/checkout@v2
+      - name: Fetch deps
+        run: yarn
+      - name: Build
+        run: yarn webpack
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package
+        run: cd dist && tar -cvf release . && mv release ../
+      - name: upload release
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: release
+          asset_name: horizon-${{ steps.get_release.outputs.tag_name }}.tar.gz
+          asset_content_type: application/gzip
+      - name: upload release
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: release
+          asset_name: horizon.tar.gz
+          asset_content_type: application/gzip
