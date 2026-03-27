@@ -32,6 +32,9 @@ const Wrapper = styled.div`
       margin: 16px;
     }
   }
+    div:last-child {
+    margin-left: auto;
+  }
 `;
 
 function Navbar() {
@@ -56,6 +59,9 @@ function Navbar() {
           </Link>
         </li>
       </ul>
+      <div>
+        <span>Quickstart</span>
+      </div>
     </Wrapper>
   );
 }
