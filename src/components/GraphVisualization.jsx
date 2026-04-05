@@ -558,9 +558,12 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
       node.attr('transform', d => `translate(${d.x},${d.y})`);
     });
 
-    // Auto-fit when simulation stabilises (only on fresh load, not cached)
+    // Auto-fit once on initial load (flag prevents re-trigger after drag)
+    let autoFitDone = false;
     if (!hasCached) {
       simulation.on('end', () => {
+        if (autoFitDone) return;
+        autoFitDone = true;
         const bbox = g.node().getBBox();
         if (!bbox.width) return;
         const pad = 60;
