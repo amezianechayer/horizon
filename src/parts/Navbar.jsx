@@ -128,6 +128,11 @@ function Navbar() {
               <span>Transactions</span>
             </Link>
           </li>
+          <li>
+            <Link to="/graph">
+              <span>Graph</span>
+            </Link>
+          </li>
         </ul>
         <div className="search">
           <input type="text"/>
