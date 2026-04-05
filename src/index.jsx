@@ -18,6 +18,7 @@ import Accounts from './pages/Accounts.jsx';
 import Account from './pages/Account.jsx';
 import Create from './pages/Create.jsx';
 import TransactionGraph from './pages/TransactionGraph.jsx';
+import Analytics from './pages/Analytics.jsx';
 import ScrollToTop from './parts/Scroll.jsx';
 import Panel from './parts/Panel.jsx';
 
@@ -128,6 +129,9 @@ class App extends React.Component {
             </Route>
             <Route path="/graph" exact>
               <TransactionGraph></TransactionGraph>
+            </Route>
+            <Route path="/analytics" exact>
+              <Analytics></Analytics>
             </Route>
             <Route path="/new" exact>
               <Create></Create>

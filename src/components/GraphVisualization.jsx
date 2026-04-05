@@ -36,20 +36,17 @@ const Wrapper = styled.div`
     pointer-events: none;
 
     .legend-title {
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #f0f6fc;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-weight: 600; margin-bottom: 8px; color: #f0f6fc;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
     }
     .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      &:last-child { margin-bottom: 0; }
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 4px; &:last-child { margin-bottom: 0; }
       .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+      .dot-cluster {
+        width: 11px; height: 11px; border-radius: 3px;
+        border: 2px dashed #8b949e; flex-shrink: 0;
+      }
     }
   }
 
@@ -65,10 +62,9 @@ const Wrapper = styled.div`
     font-size: 12px;
     pointer-events: none;
     text-align: right;
-
     .stat-value { font-size: 18px; font-weight: 700; color: #f0f6fc; }
     .stat-label { opacity: 0.55; font-size: 11px; }
-    .stat-row { margin-bottom: 6px; &:last-child { margin-bottom: 0; } }
+    .stat-row   { margin-bottom: 6px; &:last-child { margin-bottom: 0; } }
   }
 
   .graph-controls {
@@ -80,19 +76,14 @@ const Wrapper = styled.div`
     gap: 4px;
 
     button {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       background: rgba(13,17,23,0.92);
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      color: #c9d1d9;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: 1px solid #30363d; border-radius: 6px;
+      color: #c9d1d9; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, color 0.15s;
       &:hover { background: #21262d; color: #f0f6fc; }
+      &.active { background: #21262d; border-color: #58a6ff; color: #58a6ff; }
     }
   }
 
@@ -104,7 +95,7 @@ const Wrapper = styled.div`
     border: 1px solid #30363d;
     border-radius: 6px;
     padding: 6px 12px;
-    color: rgba(201,209,217,0.55);
+    color: rgba(201,209,217,0.5);
     font-size: 11px;
     pointer-events: none;
   }
@@ -116,8 +107,7 @@ const Tooltip = styled.div`
   border: 1px solid #30363d;
   border-radius: 8px;
   padding: 10px 14px;
-  color: #c9d1d9;
-  font-size: 12px;
+  color: #c9d1d9; font-size: 12px;
   font-family: 'Roboto Mono', monospace;
   pointer-events: none;
   z-index: 9999;
@@ -133,21 +123,13 @@ const Tooltip = styled.div`
     .tt-val { color: #e6edf3; word-break: break-all; }
   }
   .tt-badge {
-    display: inline-block;
-    padding: 1px 7px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    display: inline-block; padding: 1px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 600; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
   }
   .tt-hint {
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid #21262d;
-    font-size: 10px;
-    opacity: 0.45;
+    margin-top: 6px; padding-top: 6px; border-top: 1px solid #21262d;
+    font-size: 10px; opacity: 0.45;
   }
 `;
 
@@ -159,11 +141,10 @@ const NODE_COLORS = {
   world:   { fill: '#f85149', stroke: '#da3633', glow: 'rgba(248,81,73,0.35)' },
   sub:     { fill: '#388bfd', stroke: '#1f6feb', glow: 'rgba(56,139,253,0.35)' },
   account: { fill: '#3fb950', stroke: '#2ea043', glow: 'rgba(63,185,80,0.35)' },
+  cluster: { fill: '#6e4095', stroke: '#8957e5', glow: 'rgba(137,87,229,0.35)' },
 };
 
-const BADGE_BG = { world: '#da3633', sub: '#1f6feb', account: '#2ea043' };
-
-const NODE_RADIUS = 18;
+const BADGE_BG = { world: '#da3633', sub: '#1f6feb', account: '#2ea043', cluster: '#8957e5' };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -171,127 +152,103 @@ const NODE_RADIUS = 18;
 
 function formatAmount(amount, asset) {
   const parts = (asset || '').split('.');
-  const precision = parts.length > 1 ? parseInt(parts[1], 10) : 0;
-  const assetName = parts[0];
-  const value = precision > 0 ? amount / Math.pow(10, precision) : amount;
-  const formatted = value.toLocaleString('fr-FR', {
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
-  });
-  return `${formatted} ${assetName}`;
+  const prec  = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  const val   = prec > 0 ? amount / Math.pow(10, prec) : amount;
+  return `${val.toLocaleString('fr-FR', { minimumFractionDigits: prec, maximumFractionDigits: prec })} ${parts[0]}`;
 }
 
-/**
- * Compute SVG path d-attribute and label midpoint for a link.
- * If curveOffset != 0, a quadratic bezier is used (bidirectional edges).
- */
 function computeLinkGeometry(d) {
   const sx = d.source.x, sy = d.source.y;
   const tx = d.target.x, ty = d.target.y;
-  const dx = tx - sx, dy = ty - sy;
+  const dx = tx - sx,    dy = ty - sy;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const off = d.curveOffset || 0;
 
-  // Unit vectors
-  const ux = dx / len, uy = dy / len;
-  // Perpendicular unit vector (rotated 90° CCW)
-  const nx = -uy, ny = ux;
-
-  const offset = d.curveOffset || 0;
-
-  if (offset === 0) {
-    return {
-      path: `M ${sx},${sy} L ${tx},${ty}`,
-      lx: (sx + tx) / 2,
-      ly: (sy + ty) / 2 - 9,
-    };
+  if (off === 0) {
+    return { path: `M ${sx},${sy} L ${tx},${ty}`, lx: (sx+tx)/2, ly: (sy+ty)/2 - 9 };
   }
-
-  // Quadratic bezier control point
-  const cx = (sx + tx) / 2 + nx * offset;
-  const cy = (sy + ty) / 2 + ny * offset;
-
-  // Midpoint of bezier (t=0.5): 0.25*P0 + 0.5*P1 + 0.25*P2
-  const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
-  const ly = 0.25 * sy + 0.5 * cy + 0.25 * ty - 9;
-
+  const cx = (sx+tx)/2 + nx*off, cy = (sy+ty)/2 + ny*off;
   return {
     path: `M ${sx},${sy} Q ${cx},${cy} ${tx},${ty}`,
-    lx,
-    ly,
+    lx: 0.25*sx + 0.5*cx + 0.25*tx,
+    ly: 0.25*sy + 0.5*cy + 0.25*ty - 9,
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GraphVisualization component
+// Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-function GraphVisualization({ nodes, links, highlightedIds }) {
+function GraphVisualization({ nodes, links, highlightedIds, onClusterToggle, onEdgeClick }) {
   const svgRef      = useRef(null);
   const zoomRef     = useRef(null);
-  const posMapRef   = useRef(new Map());   // persists node positions across re-renders
-  const focusRef    = useRef(null);        // currently focused nodeId
-  const nodeSelRef  = useRef(null);        // d3 node selection
-  const linkSelRef  = useRef(null);        // d3 link selection
-  const labelSelRef = useRef(null);        // d3 link-label selection
-  const linkDataRef = useRef([]);          // mutated linkData (with d3 source/target objects)
+  const posMapRef   = useRef(new Map());
+  const focusRef    = useRef(null);
+  const nodeSelRef  = useRef(null);
+  const linkSelRef  = useRef(null);
+  const labelSelRef = useRef(null);
+  const dotGrpRef   = useRef(null);
+  const linkDataRef = useRef([]);
+
+  const [tooltip,  setTooltip]  = useState({ visible: false, x: 0, y: 0, kind: 'node', data: null });
+  const [animOn,   setAnimOn]   = useState(true);
 
   const history = useHistory();
 
-  const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, kind: 'node', data: null });
-
-  // ── applyFocus: dim/highlight based on focusRef.current ──────────────────
+  // ── applyFocus ────────────────────────────────────────────────────────────
   function applyFocus() {
-    const nodesSel  = nodeSelRef.current;
-    const linksSel  = linkSelRef.current;
-    const labelsSel = labelSelRef.current;
-    const lData     = linkDataRef.current;
-    if (!nodesSel) return;
+    const ns  = nodeSelRef.current;
+    const ls  = linkSelRef.current;
+    const lls = labelSelRef.current;
+    const dg  = dotGrpRef.current;
+    const ld  = linkDataRef.current;
+    if (!ns) return;
 
-    const focusedId = focusRef.current;
-
-    if (!focusedId) {
-      nodesSel.attr('opacity', 1);
-      linksSel
-        .attr('opacity', 0.8)
-        .attr('stroke', '#30363d')
-        .attr('marker-end', 'url(#arrow)');
-      labelsSel.attr('opacity', 0.65);
+    const fid = focusRef.current;
+    if (!fid) {
+      ns.attr('opacity', 1);
+      ls.attr('opacity', 0.8).attr('stroke', '#30363d').attr('marker-end', 'url(#arrow)');
+      lls.attr('opacity', 0.65);
+      if (dg) dg.selectAll('circle.flow-dot').attr('opacity', 0.6);
       return;
     }
 
-    // Collect all directly connected node IDs
-    const connected = new Set([focusedId]);
-    lData.forEach(l => {
-      const s = l.source.id || l.source;
-      const t = l.target.id || l.target;
-      if (s === focusedId) connected.add(t);
-      if (t === focusedId) connected.add(s);
+    const connected = new Set([fid]);
+    ld.forEach(l => {
+      const s = l.source.id || l.source, t = l.target.id || l.target;
+      if (s === fid) connected.add(t);
+      if (t === fid) connected.add(s);
     });
 
-    nodesSel.attr('opacity', d => connected.has(d.id) ? 1 : 0.07);
+    ns.attr('opacity', d => connected.has(d.id) ? 1 : 0.07);
 
-    linksSel
-      .attr('opacity', d => {
-        const s = d.source.id || d.source;
-        const t = d.target.id || d.target;
-        return (s === focusedId || t === focusedId) ? 1 : 0.04;
-      })
-      .attr('stroke', d => {
-        const s = d.source.id || d.source;
-        const t = d.target.id || d.target;
-        return (s === focusedId || t === focusedId) ? '#58a6ff' : '#21262d';
-      })
-      .attr('marker-end', d => {
-        const s = d.source.id || d.source;
-        const t = d.target.id || d.target;
-        return (s === focusedId || t === focusedId) ? 'url(#arrow-focus)' : 'url(#arrow)';
+    ls.attr('opacity', d => {
+      const s = d.source.id||d.source, t = d.target.id||d.target;
+      return (s===fid||t===fid) ? 1 : 0.04;
+    })
+    .attr('stroke', d => {
+      const s = d.source.id||d.source, t = d.target.id||d.target;
+      return (s===fid||t===fid) ? '#58a6ff' : '#21262d';
+    })
+    .attr('marker-end', d => {
+      const s = d.source.id||d.source, t = d.target.id||d.target;
+      return (s===fid||t===fid) ? 'url(#arrow-focus)' : 'url(#arrow)';
+    });
+
+    lls.attr('opacity', d => {
+      const s = d.source.id||d.source, t = d.target.id||d.target;
+      return (s===fid||t===fid) ? 1 : 0;
+    });
+
+    if (dg) {
+      dg.selectAll('circle.flow-dot').attr('opacity', dot => {
+        const l = linkDataRef.current[dot.pathIdx];
+        if (!l) return 0;
+        const s = l.source.id||l.source, t = l.target.id||l.target;
+        return (s===fid||t===fid) ? 0.85 : 0.02;
       });
-
-    labelsSel.attr('opacity', d => {
-      const s = d.source.id || d.source;
-      const t = d.target.id || d.target;
-      return (s === focusedId || t === focusedId) ? 1 : 0;
-    });
+    }
   }
 
   // ── Main D3 effect ────────────────────────────────────────────────────────
@@ -309,128 +266,99 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
     // ── Defs ────────────────────────────────────────────────────────────────
     const defs = svg.append('defs');
 
-    // Glow filter
-    const gf = defs.append('filter').attr('id', 'node-glow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+    const gf = defs.append('filter').attr('id', 'node-glow')
+      .attr('x', '-60%').attr('y', '-60%').attr('width', '220%').attr('height', '220%');
     gf.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', '3').attr('result', 'blur');
     const gfm = gf.append('feMerge');
     gfm.append('feMergeNode').attr('in', 'blur');
     gfm.append('feMergeNode').attr('in', 'SourceGraphic');
 
-    // Arrow markers
     function addArrow(id, color) {
       defs.append('marker')
-        .attr('id', id)
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 28)   // accounts for node radius + small gap
-        .attr('refY', 0)
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
+        .attr('id', id).attr('viewBox', '0 -5 10 10')
+        .attr('refX', 30).attr('refY', 0)
+        .attr('markerWidth', 5).attr('markerHeight', 5)
         .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-4L9,0L0,4')
-        .attr('fill', color);
+        .append('path').attr('d', 'M0,-4L9,0L0,4').attr('fill', color);
     }
     addArrow('arrow',       '#8b949e');
     addArrow('arrow-focus', '#58a6ff');
-    addArrow('arrow-hl',    '#f0f6fc');
 
-    // ── Container for zoom ──────────────────────────────────────────────────
     const g = svg.append('g');
 
-    // ── Zoom ────────────────────────────────────────────────────────────────
-    const zoom = d3.zoom()
-      .scaleExtent([0.06, 8])
+    const zoom = d3.zoom().scaleExtent([0.06, 8])
       .on('zoom', ev => g.attr('transform', ev.transform));
     svg.call(zoom);
     zoomRef.current = zoom;
 
-    // Clear focus when clicking on background
     svg.on('click', () => {
       focusRef.current = null;
       applyFocus();
       setTooltip(p => ({ ...p, visible: false }));
     });
 
-    // ── Subtle grid background ───────────────────────────────────────────────
+    // Grid
     const gs = 50;
-    const gridG = g.append('g').attr('class', 'grid').attr('pointer-events', 'none');
-    for (let x = -width; x < width * 3; x += gs)
-      gridG.append('line').attr('x1', x).attr('y1', -height).attr('x2', x).attr('y2', height * 3).attr('stroke', '#161b22').attr('stroke-width', 1);
-    for (let y = -height; y < height * 3; y += gs)
-      gridG.append('line').attr('x1', -width).attr('y1', y).attr('x2', width * 3).attr('y2', y).attr('stroke', '#161b22').attr('stroke-width', 1);
+    const gridG = g.append('g').attr('pointer-events', 'none');
+    for (let x = -width; x < width*3; x += gs)
+      gridG.append('line').attr('x1',x).attr('y1',-height).attr('x2',x).attr('y2',height*3).attr('stroke','#161b22').attr('stroke-width',1);
+    for (let y = -height; y < height*3; y += gs)
+      gridG.append('line').attr('x1',-width).attr('y1',y).attr('x2',width*3).attr('y2',y).attr('stroke','#161b22').attr('stroke-width',1);
 
-    // ── Clone data, restoring cached positions ───────────────────────────────
+    // ── Data prep ────────────────────────────────────────────────────────────
     const nodeData = nodes.map(n => {
       const pos = posMapRef.current.get(n.id);
-      return {
-        ...n,
-        x: pos ? pos.x : (width / 2 + (Math.random() - 0.5) * 200),
-        y: pos ? pos.y : (height / 2 + (Math.random() - 0.5) * 200),
-      };
+      return { ...n, x: pos ? pos.x : width/2+(Math.random()-0.5)*200, y: pos ? pos.y : height/2+(Math.random()-0.5)*200 };
     });
 
-    // ── Bidirectional edge detection (before D3 mutates source/target) ──────
     const edgeKeys = new Set(links.map(l => `${l.source}||${l.target}`));
     const linkData = links.map(l => {
-      const reverseExists = edgeKeys.has(`${l.target}||${l.source}`);
-      let curveOffset = 0;
-      if (reverseExists) {
-        // Assign consistent offset direction based on string comparison
-        curveOffset = l.source < l.target ? 28 : -28;
-      }
-      return { ...l, curveOffset };
+      const rev = edgeKeys.has(`${l.target}||${l.source}`);
+      return { ...l, curveOffset: rev ? (l.source < l.target ? 28 : -28) : 0 };
     });
     linkDataRef.current = linkData;
 
-    // ── Force simulation ─────────────────────────────────────────────────────
-    const simulation = d3.forceSimulation(nodeData)
-      .force('link',
-        d3.forceLink(linkData)
-          .id(d => d.id)
-          .distance(d => {
-            if (d.source.type === 'world' || d.target.type === 'world') return 160;
-            return 115;
-          })
-          .strength(0.55)
-      )
-      .force('charge', d3.forceManyBody().strength(-520))
-      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.05))
-      .force('collision', d3.forceCollide(38));
-
-    // Give cached nodes lower alpha so they don't jump much
+    // ── Simulation ───────────────────────────────────────────────────────────
     const hasCached = nodeData.some(n => posMapRef.current.has(n.id));
+
+    const simulation = d3.forceSimulation(nodeData)
+      .force('link', d3.forceLink(linkData).id(d => d.id)
+        .distance(d => (d.source.type==='world'||d.target.type==='world') ? 180 : 120)
+        .strength(0.55))
+      .force('charge', d3.forceManyBody().strength(-560))
+      .force('center', d3.forceCenter(width/2, height/2).strength(0.05))
+      .force('collision', d3.forceCollide(d => d.isCluster ? 44 : 36));
+
     if (hasCached) simulation.alpha(0.3);
 
-    // ── Draw links (using <path> for bidirectional curve support) ────────────
-    const linksG = g.append('g').attr('class', 'links');
-    const link = linksG.selectAll('path')
-      .data(linkData)
-      .join('path')
+    // ── Links ────────────────────────────────────────────────────────────────
+    const linksG = g.append('g');
+    const link = linksG.selectAll('path').data(linkData).join('path')
       .attr('class', 'link')
       .attr('fill', 'none')
       .attr('stroke', '#30363d')
       .attr('stroke-opacity', 0.8)
-      .attr('stroke-width', d => Math.max(1.5, Math.min(5, Math.log2(d.count + 1) * 1.6)))
+      .attr('stroke-width', d => Math.max(1.5, Math.min(5, Math.log2(d.count+1)*1.6)))
       .attr('marker-end', 'url(#arrow)')
       .style('cursor', 'pointer')
       .on('mouseenter', function(event, d) {
-        d3.select(this).attr('stroke', '#58a6ff').attr('marker-end', 'url(#arrow-focus)');
-        setTooltip({
-          visible: true, x: event.clientX, y: event.clientY,
-          kind: 'link', data: d,
-        });
+        d3.select(this).attr('stroke','#58a6ff').attr('marker-end','url(#arrow-focus)');
+        setTooltip({ visible: true, x: event.clientX, y: event.clientY, kind: 'link', data: d });
       })
-      .on('mousemove', event => setTooltip(p => ({ ...p, x: event.clientX, y: event.clientY })))
+      .on('mousemove', ev => setTooltip(p => ({ ...p, x: ev.clientX, y: ev.clientY })))
       .on('mouseleave', function() {
-        applyFocus(); // restore correct state
+        applyFocus();
         setTooltip(p => ({ ...p, visible: false }));
+      })
+      .on('click', function(event, d) {
+        event.stopPropagation();
+        if (onEdgeClick) onEdgeClick(d);
       });
+    linkSelRef.current = link;
 
     // ── Link labels ──────────────────────────────────────────────────────────
-    const labelsG = g.append('g').attr('class', 'link-labels');
-    const linkLabel = labelsG.selectAll('text')
-      .data(linkData)
-      .join('text')
+    const labelsG = g.append('g');
+    const linkLabel = labelsG.selectAll('text').data(linkData).join('text')
       .attr('class', 'link-label')
       .attr('text-anchor', 'middle')
       .attr('fill', '#6e7681')
@@ -439,102 +367,144 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
       .attr('pointer-events', 'none')
       .attr('opacity', 0.65)
       .text(d => `${d.asset.split('.')[0]} ${formatAmount(d.amount, d.asset)} ×${d.count}`);
-
-    nodeSelRef.current  = null; // will be set below
-    linkSelRef.current  = link;
     labelSelRef.current = linkLabel;
 
-    // ── Draw nodes ───────────────────────────────────────────────────────────
-    const nodesG = g.append('g').attr('class', 'nodes');
+    // ── Flow animation dots ──────────────────────────────────────────────────
+    const pathRefs = [];
+    link.each(function(d, i) { pathRefs[i] = this; });
 
-    const node = nodesG.selectAll('g')
-      .data(nodeData)
-      .join('g')
+    const dotGroup = g.append('g').attr('pointer-events', 'none');
+    dotGrpRef.current = dotGroup;
+
+    const dotData = linkData.map((l, i) => ({
+      pathIdx: i,
+      t: Math.random(),
+      speed: Math.max(0.0008, Math.min(0.004, l.count * 0.0009)),
+    }));
+
+    const dotEls = dotGroup.selectAll('circle').data(dotData).join('circle')
+      .attr('class', 'flow-dot')
+      .attr('r', 2.8)
+      .attr('fill', '#79c0ff')
+      .attr('opacity', animOn ? 0.6 : 0);
+
+    let rafId;
+    let animRunning = true;
+
+    function animTick() {
+      if (!animRunning) return;
+      dotEls.each(function(dot) {
+        const pathEl = pathRefs[dot.pathIdx];
+        if (!pathEl) return;
+        dot.t = (dot.t + dot.speed) % 1;
+        try {
+          const len = pathEl.getTotalLength();
+          if (len > 0) {
+            const pt = pathEl.getPointAtLength(dot.t * len);
+            d3.select(this).attr('cx', pt.x).attr('cy', pt.y);
+          }
+        } catch(e) {}
+      });
+      rafId = requestAnimationFrame(animTick);
+    }
+
+    if (animOn) animTick();
+
+    // ── Nodes ────────────────────────────────────────────────────────────────
+    const nodesG = g.append('g');
+    const node = nodesG.selectAll('g').data(nodeData).join('g')
       .attr('class', 'node')
       .style('cursor', 'pointer')
       .call(d3.drag()
-        .on('start', (ev, d) => { if (!ev.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-        .on('drag',  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
-        .on('end',   (ev, d) => { if (!ev.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+        .on('start', (ev, d) => { if (!ev.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+        .on('drag',  (ev, d) => { d.fx=ev.x; d.fy=ev.y; })
+        .on('end',   (ev, d) => { if (!ev.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
       );
-
     nodeSelRef.current = node;
 
-    // Glow halo (hidden by default, shown on hover / focus)
+    // Glow halo
     node.append('circle')
       .attr('class', 'glow-ring')
-      .attr('r', 26)
-      .attr('fill', d => NODE_COLORS[d.type]?.glow || 'rgba(63,185,80,0.3)')
-      .attr('opacity', 0)
-      .attr('pointer-events', 'none');
+      .attr('r', d => d.isCluster ? 32 : 26)
+      .attr('fill', d => NODE_COLORS[d.isCluster ? 'cluster' : d.type]?.glow || 'rgba(63,185,80,0.3)')
+      .attr('opacity', 0).attr('pointer-events', 'none');
 
-    // Special highlight ring for search-matched nodes
+    // Search highlight ring
     if (highlightedIds && highlightedIds.size > 0) {
       node.filter(d => highlightedIds.has(d.id))
         .append('circle')
-        .attr('class', 'search-ring')
-        .attr('r', 25)
-        .attr('fill', 'none')
-        .attr('stroke', '#e3b341')
-        .attr('stroke-width', 2.5)
-        .attr('stroke-dasharray', '4 3')
-        .attr('opacity', 0.9)
+        .attr('r', 27).attr('fill', 'none')
+        .attr('stroke', '#e3b341').attr('stroke-width', 2.5)
+        .attr('stroke-dasharray', '4 3').attr('opacity', 0.9)
         .attr('pointer-events', 'none');
     }
 
-    // Main body
+    // Main circle
     node.append('circle')
       .attr('class', 'main-circle')
-      .attr('r', NODE_RADIUS)
-      .attr('fill', d => NODE_COLORS[d.type]?.fill || '#3fb950')
-      .attr('stroke', d => NODE_COLORS[d.type]?.stroke || '#2ea043')
-      .attr('stroke-width', 2)
+      .attr('r', d => d.isCluster ? 22 : 18)
+      .attr('fill',   d => NODE_COLORS[d.isCluster ? 'cluster' : d.type]?.fill   || '#3fb950')
+      .attr('stroke', d => NODE_COLORS[d.isCluster ? 'cluster' : d.type]?.stroke || '#2ea043')
+      .attr('stroke-width', d => d.isCluster ? 2.5 : 2)
+      .attr('stroke-dasharray', d => d.isCluster ? '5 3' : null)
       .attr('filter', 'url(#node-glow)');
 
-    // Initial letter icon
+    // Letter / icon
     node.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
+      .attr('text-anchor', 'middle').attr('dy', '0.35em')
       .attr('fill', 'rgba(255,255,255,0.9)')
-      .attr('font-size', 11)
-      .attr('font-weight', 700)
-      .attr('pointer-events', 'none')
-      .text(d => d.id.replace('@', '').slice(0, 1).toUpperCase());
+      .attr('font-size', d => d.isCluster ? 13 : 11)
+      .attr('font-weight', 700).attr('pointer-events', 'none')
+      .text(d => d.id.replace('@','').slice(0,1).toUpperCase());
 
-    // Label below node
+    // Child count badge for clusters
+    node.filter(d => d.isCluster).append('circle')
+      .attr('cx', d => d.isCluster ? 16 : 12).attr('cy', -16)
+      .attr('r', 9).attr('fill', '#8957e5').attr('stroke', '#0d1117').attr('stroke-width', 2)
+      .attr('pointer-events', 'none');
+    node.filter(d => d.isCluster).append('text')
+      .attr('x', d => d.isCluster ? 16 : 12).attr('y', -16)
+      .attr('text-anchor', 'middle').attr('dy', '0.35em')
+      .attr('fill', 'white').attr('font-size', 9).attr('font-weight', 700)
+      .attr('pointer-events', 'none')
+      .text(d => d.childCount);
+
+    // Label
     node.append('text')
       .attr('class', 'node-label')
       .attr('text-anchor', 'middle')
-      .attr('dy', NODE_RADIUS + 14)
-      .attr('fill', '#8b949e')
-      .attr('font-size', 10)
+      .attr('dy', d => (d.isCluster ? 22 : 18) + 14)
+      .attr('fill', '#8b949e').attr('font-size', 10)
       .attr('font-family', 'Roboto Mono, monospace')
       .attr('pointer-events', 'none')
-      .text(d => d.id.length > 20 ? d.id.slice(0, 19) + '…' : d.id);
+      .text(d => d.id.length > 20 ? d.id.slice(0,19)+'…' : d.id);
 
     // ── Node interactions ────────────────────────────────────────────────────
     node
       .on('mouseenter', function(event, d) {
         event.stopPropagation();
         d3.select(this).select('.glow-ring').attr('opacity', 0.7);
-        d3.select(this).select('.main-circle').attr('r', 22);
+        d3.select(this).select('.main-circle').attr('r', d.isCluster ? 26 : 22);
         d3.select(this).select('.node-label').attr('fill', '#c9d1d9');
         setTooltip({ visible: true, x: event.clientX, y: event.clientY, kind: 'node', data: d });
       })
-      .on('mousemove', event => setTooltip(p => ({ ...p, x: event.clientX, y: event.clientY })))
-      .on('mouseleave', function() {
+      .on('mousemove', ev => setTooltip(p => ({ ...p, x: ev.clientX, y: ev.clientY })))
+      .on('mouseleave', function(event, d) {
         d3.select(this).select('.glow-ring').attr('opacity', 0);
-        d3.select(this).select('.main-circle').attr('r', NODE_RADIUS);
+        d3.select(this).select('.main-circle').attr('r', d.isCluster ? 22 : 18);
         d3.select(this).select('.node-label').attr('fill', '#8b949e');
         setTooltip(p => ({ ...p, visible: false }));
       })
       .on('click', function(event, d) {
         event.stopPropagation();
+        if (d.isCluster) {
+          // Toggle cluster expand/collapse
+          if (onClusterToggle) onClusterToggle(d.id);
+          return;
+        }
         if (focusRef.current === d.id) {
-          // Second click → navigate to account
           history.push(`/accounts/${d.id}`);
         } else {
-          // First click → focus node
           focusRef.current = d.id;
           applyFocus();
         }
@@ -542,23 +512,16 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
 
     // ── Tick ─────────────────────────────────────────────────────────────────
     simulation.on('tick', () => {
-      // Update position cache
       nodeData.forEach(d => posMapRef.current.set(d.id, { x: d.x, y: d.y }));
-
-      // Update link paths
       link.attr('d', d => computeLinkGeometry(d).path);
-
-      // Update link labels
       linkLabel.each(function(d) {
         const { lx, ly } = computeLinkGeometry(d);
         d3.select(this).attr('x', lx).attr('y', ly);
       });
-
-      // Update node positions
       node.attr('transform', d => `translate(${d.x},${d.y})`);
     });
 
-    // Auto-fit once on initial load (flag prevents re-trigger after drag)
+    // Auto-fit once on first load
     let autoFitDone = false;
     if (!hasCached) {
       simulation.on('end', () => {
@@ -567,26 +530,29 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
         const bbox = g.node().getBBox();
         if (!bbox.width) return;
         const pad = 60;
-        const scale = Math.min(
-          (width  - pad * 2) / bbox.width,
-          (height - pad * 2) / bbox.height,
-          1.4
-        );
-        const tx = pad - bbox.x * scale + (width  - bbox.width  * scale) / 2;
-        const ty = pad - bbox.y * scale + (height - bbox.height * scale) / 2;
-        svg.transition().duration(700).call(
-          zoom.transform,
-          d3.zoomIdentity.translate(tx, ty).scale(scale)
-        );
+        const scale = Math.min((width-pad*2)/bbox.width, (height-pad*2)/bbox.height, 1.4);
+        const tx = pad - bbox.x*scale + (width  - bbox.width *scale)/2;
+        const ty = pad - bbox.y*scale + (height - bbox.height*scale)/2;
+        svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
       });
     }
 
-    return () => { simulation.stop(); };
+    return () => {
+      animRunning = false;
+      cancelAnimationFrame(rafId);
+      simulation.stop();
+    };
   }, [nodes, links]);
 
-  // ── Zoom controls ────────────────────────────────────────────────────────
-  function handleZoom(factor) {
-    d3.select(svgRef.current).transition().duration(280).call(zoomRef.current.scaleBy, factor);
+  // Sync animation on/off without restarting simulation
+  useEffect(() => {
+    const dg = dotGrpRef.current;
+    if (!dg) return;
+    dg.selectAll('circle.flow-dot').attr('opacity', animOn ? 0.6 : 0);
+  }, [animOn]);
+
+  function handleZoom(f) {
+    d3.select(svgRef.current).transition().duration(280).call(zoomRef.current.scaleBy, f);
   }
   function handleReset() {
     d3.select(svgRef.current).transition().duration(500).call(zoomRef.current.transform, d3.zoomIdentity);
@@ -596,19 +562,22 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
     <Wrapper>
       <svg ref={svgRef} />
 
-      {/* Legend */}
       <div className="graph-legend">
-        <div className="legend-title">Account types</div>
+        <div className="legend-title">Node types</div>
         {[
-          { type: 'world',   label: '@world (infinite source)' },
-          { type: 'account', label: 'Account' },
-          { type: 'sub',     label: 'Sub-account' },
-        ].map(({ type, label }) => (
-          <div className="legend-item" key={type}>
-            <div className="dot" style={{ background: NODE_COLORS[type].fill }} />
+          { key: 'world',   label: '@world (source)' },
+          { key: 'account', label: 'Account' },
+          { key: 'sub',     label: 'Sub-account' },
+        ].map(({ key, label }) => (
+          <div className="legend-item" key={key}>
+            <div className="dot" style={{ background: NODE_COLORS[key].fill }} />
             <span>{label}</span>
           </div>
         ))}
+        <div className="legend-item">
+          <div className="dot-cluster" />
+          <span>Cluster (click to expand)</span>
+        </div>
         {highlightedIds && highlightedIds.size > 0 && (
           <div className="legend-item" style={{ marginTop: 6 }}>
             <div className="dot" style={{ background: 'transparent', border: '2px dashed #e3b341', width: 9, height: 9 }} />
@@ -617,11 +586,10 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
         )}
       </div>
 
-      {/* Stats */}
       <div className="graph-stats">
         <div className="stat-row">
           <div className="stat-value">{nodes ? nodes.length : 0}</div>
-          <div className="stat-label">accounts</div>
+          <div className="stat-label">nodes</div>
         </div>
         <div className="stat-row">
           <div className="stat-value">{links ? links.length : 0}</div>
@@ -629,19 +597,24 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
         </div>
       </div>
 
-      {/* Zoom controls */}
       <div className="graph-controls">
-        <button title="Zoom in"  onClick={() => handleZoom(1.4)}>+</button>
-        <button title="Zoom out" onClick={() => handleZoom(0.7)}>−</button>
-        <button title="Reset"    onClick={handleReset} style={{ fontSize: 12 }}>⊙</button>
+        <button title="Zoom in"     onClick={() => handleZoom(1.4)}>+</button>
+        <button title="Zoom out"    onClick={() => handleZoom(0.7)}>−</button>
+        <button title="Reset view"  onClick={handleReset} style={{ fontSize: 12 }}>⊙</button>
+        <button
+          title={animOn ? 'Disable flow animation' : 'Enable flow animation'}
+          className={animOn ? 'active' : ''}
+          onClick={() => setAnimOn(v => !v)}
+          style={{ fontSize: 11 }}
+        >
+          ◎
+        </button>
       </div>
 
-      {/* Hint */}
       <div className="focus-hint">
-        Drag · Scroll to zoom · Click to focus · Double-click to open account
+        Drag · Scroll to zoom · Click node to focus · Click again to open · Click edge for detail
       </div>
 
-      {/* Tooltip */}
       {tooltip.visible && tooltip.data && (
         <Tooltip style={{ left: tooltip.x + 16, top: tooltip.y }}>
           {tooltip.kind === 'node' && (() => {
@@ -649,31 +622,27 @@ function GraphVisualization({ nodes, links, highlightedIds }) {
             return (
               <>
                 <div className="tt-title">{d.id}</div>
-                <div className="tt-badge" style={{ background: BADGE_BG[d.type], color: '#fff' }}>
-                  {d.type}
+                <div className="tt-badge" style={{ background: BADGE_BG[d.isCluster ? 'cluster' : d.type], color: '#fff' }}>
+                  {d.isCluster ? `cluster (${d.childCount} accounts)` : d.type}
                 </div>
-                {highlightedIds && highlightedIds.has(d.id) && (
-                  <div className="tt-badge" style={{ background: '#9e6a03', color: '#fff', marginLeft: 4 }}>
-                    search match
-                  </div>
-                )}
-                <div className="tt-hint">Click to focus connections · Click again to open</div>
+                <div className="tt-hint">
+                  {d.isCluster ? 'Click to expand · shows sub-accounts' : 'Click to focus · Click again to open'}
+                </div>
               </>
             );
           })()}
 
           {tooltip.kind === 'link' && (() => {
             const d = tooltip.data;
-            const srcId = d.source?.id || d.source;
-            const tgtId = d.target?.id || d.target;
             return (
               <>
                 <div className="tt-title">Fund flow</div>
-                <div className="tt-row"><span className="tt-key">From</span><span className="tt-val">{srcId}</span></div>
-                <div className="tt-row"><span className="tt-key">To</span><span className="tt-val">{tgtId}</span></div>
+                <div className="tt-row"><span className="tt-key">From</span><span className="tt-val">{d.sourceId || (d.source?.id||d.source)}</span></div>
+                <div className="tt-row"><span className="tt-key">To</span><span className="tt-val">{d.targetId || (d.target?.id||d.target)}</span></div>
                 <div className="tt-row"><span className="tt-key">Asset</span><span className="tt-val">{d.asset}</span></div>
                 <div className="tt-row"><span className="tt-key">Total</span><span className="tt-val">{formatAmount(d.amount, d.asset)}</span></div>
                 <div className="tt-row"><span className="tt-key">Transactions</span><span className="tt-val">{d.count}</span></div>
+                <div className="tt-hint">Click to see all transactions on this flow</div>
               </>
             );
           })()}
