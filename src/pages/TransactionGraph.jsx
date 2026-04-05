@@ -2,122 +2,107 @@ import * as React from 'react';
 import styled from 'styled-components';
 import ledger from '../lib/ledger';
 import GraphVisualization from '../components/GraphVisualization.jsx';
-import Panel from '../parts/Panel.jsx';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Wrapper = styled.div`
-  .top-container {
-    h1 {
-      margin: 0 0 4px;
-      font-size: 22px;
-      font-weight: 700;
-    }
+  color: #c9d1d9;
 
-    p {
-      margin: 0 0 20px;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 14px;
-    }
-  }
-
-  .header-panel {
+  .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding: 16px 20px;
+    margin-bottom: 16px;
+    padding: 14px 18px;
     background: #111;
     border-radius: 10px;
-    border: 1px solid #222;
-    color: white;
-
-    .header-left h1 {
-      margin: 0 0 2px;
-      font-size: 20px;
-    }
-
-    .header-left p {
-      margin: 0;
-      font-size: 13px;
-      opacity: 0.5;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-  }
-
-  .loading-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 400px;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 14px;
-    background: #0d1117;
-    border-radius: 12px;
     border: 1px solid #21262d;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 10px;
 
-    .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid #21262d;
-      border-top-color: #3fb950;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    h1 {
+      margin: 0 0 2px;
+      font-size: 19px;
+      font-weight: 700;
+      color: #f0f6fc;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  }
-
-  .empty-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 300px;
-    flex-direction: column;
-    gap: 8px;
-    background: #0d1117;
-    border-radius: 12px;
-    border: 1px solid #21262d;
-    color: rgba(255, 255, 255, 0.4);
-
-    .empty-icon {
-      font-size: 36px;
-      opacity: 0.4;
-    }
-    p { margin: 0; font-size: 14px; }
+    p { margin: 0; font-size: 13px; opacity: 0.45; }
   }
 
   .filter-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 16px;
     flex-wrap: wrap;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 8px;
 
-    label {
-      color: rgba(255,255,255,0.6);
-      font-size: 13px;
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    select {
+    label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(201,209,217,0.45);
+      white-space: nowrap;
+    }
+
+    select, input[type="date"], input[type="text"] {
       background: #161b22;
       border: 1px solid #30363d;
-      border-radius: 6px;
+      border-radius: 5px;
       color: #c9d1d9;
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-family: 'Roboto Mono', monospace;
       cursor: pointer;
-
       &:focus { outline: none; border-color: #58a6ff; }
+    }
+
+    input[type="text"] {
+      width: 200px;
+      &::placeholder { color: rgba(201,209,217,0.3); }
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: #21262d;
+      margin: 0 4px;
+    }
+
+    .badge {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: #8b949e;
+    }
+
+    .search-clear {
+      background: none;
+      border: none;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      line-height: 1;
+      &:hover { color: #f0f6fc; }
     }
 
     .refresh-btn {
@@ -126,20 +111,82 @@ const Wrapper = styled.div`
       border: 1px solid #30363d;
       border-radius: 6px;
       color: #c9d1d9;
-      padding: 6px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: background 0.2s;
-
-      &:hover { background: #30363d; }
-    }
-
-    .hint {
-      color: rgba(255,255,255,0.35);
+      padding: 5px 13px;
       font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s;
+      white-space: nowrap;
+      &:hover { background: #30363d; color: #f0f6fc; }
+      &:disabled { opacity: 0.4; cursor: default; }
+    }
+  }
+
+  .no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    gap: 10px;
+    color: rgba(201,209,217,0.4);
+
+    .icon { font-size: 32px; opacity: 0.35; }
+    p { margin: 0; font-size: 13px; }
+    .sub { font-size: 11px; }
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 420px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    gap: 12px;
+    color: rgba(201,209,217,0.4);
+    font-size: 13px;
+
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 3px solid #21262d;
+      border-top-color: #3fb950;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  }
+
+  .result-info {
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: rgba(201,209,217,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .tag {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-family: 'Roboto Mono', monospace;
+      color: #e3b341;
     }
   }
 `;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 function nodeType(id) {
   if (!id) return 'account';
@@ -148,145 +195,332 @@ function nodeType(id) {
   return 'account';
 }
 
+function toISODate(ts) {
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
+
 class TransactionGraph extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      ready: false,
-      loading: true,
+      // Data
+      rawTransactions: [],
+      availableAssets: [],
+      dateRange: { min: '', max: '' },
+
+      // Filters
+      filterAsset: 'all',
+      filterDateFrom: '',
+      filterDateTo: '',
+      searchQuery: '',
+      maxNodes: 60,
+
+      // Derived
       nodes: [],
       links: [],
-      filterAsset: 'all',
-      availableAssets: [],
-      rawTransactions: [],
+      highlightedIds: new Set(),
+      totalNodes: 0,    // before maxNodes cap
+      limited: false,   // true if maxNodes cap was applied
+
+      // UI state
+      loading: true,
+      ready: false,
     };
 
-    this.fetch = this.fetch.bind(this);
-    this.buildGraph = this.buildGraph.bind(this);
-    this.handleAssetFilter = this.handleAssetFilter.bind(this);
+    this._searchTimer = null;
+    this.fetch         = this.fetch.bind(this);
+    this.applyFilters  = this.applyFilters.bind(this);
+    this.handleSearch  = this.handleSearch.bind(this);
   }
 
   componentDidMount() {
     this.fetch();
   }
 
-  // Fetch all pages of transactions
-  fetch() {
-    this.setState({ loading: true, ready: false });
-
-    const allTransactions = [];
-
-    const fetchPage = (query) => {
-      return ledger().getTransactions(query).then(data => {
-        const page = data.cursor.data || [];
-        allTransactions.push(...page);
-
-        // If full page, there might be more
-        if (page.length > 0 && page.length >= data.cursor.page_size) {
-          const lastTxid = page[page.length - 1].txid;
-          return fetchPage({ after: lastTxid });
-        }
-        return allTransactions;
-      });
-    };
-
-    fetchPage({})
-      .then(transactions => {
-        const assets = new Set();
-        transactions.forEach(tx =>
-          tx.postings.forEach(p => assets.add(p.asset))
-        );
-        this.setState({
-          rawTransactions: transactions,
-          availableAssets: Array.from(assets),
-        }, () => this.buildGraph());
-      })
-      .catch(() => {
-        this.setState({ loading: false, ready: true });
-      });
+  componentWillUnmount() {
+    clearTimeout(this._searchTimer);
   }
 
-  buildGraph(assetFilter = null) {
-    const filter = assetFilter || this.state.filterAsset;
-    const { rawTransactions } = this.state;
+  // ── Fetch all transaction pages ──────────────────────────────────────────
+  fetch() {
+    this.setState({ loading: true, ready: false });
+    const all = [];
+
+    const fetchPage = query =>
+      ledger().getTransactions(query).then(data => {
+        const page = data.cursor.data || [];
+        all.push(...page);
+        if (page.length > 0 && page.length >= data.cursor.page_size) {
+          return fetchPage({ after: page[page.length - 1].txid });
+        }
+        return all;
+      });
+
+    fetchPage({})
+      .then(txs => {
+        const assets = new Set();
+        let minTs = Infinity, maxTs = -Infinity;
+
+        txs.forEach(tx => {
+          const ts = tx.timestamp;
+          if (ts < minTs) minTs = ts;
+          if (ts > maxTs) maxTs = ts;
+          tx.postings.forEach(p => assets.add(p.asset));
+        });
+
+        const minDate = isFinite(minTs) ? toISODate(minTs) : '';
+        const maxDate = isFinite(maxTs) ? toISODate(maxTs) : '';
+
+        this.setState({
+          rawTransactions: txs,
+          availableAssets: Array.from(assets).sort(),
+          dateRange: { min: minDate, max: maxDate },
+          filterDateFrom: minDate,
+          filterDateTo: maxDate,
+        }, this.applyFilters);
+      })
+      .catch(() => this.setState({ loading: false, ready: true }));
+  }
+
+  // ── Build graph from current filters ────────────────────────────────────
+  applyFilters() {
+    const {
+      rawTransactions, filterAsset,
+      filterDateFrom, filterDateTo,
+      searchQuery, maxNodes,
+    } = this.state;
 
     const accountsMap = new Map();
-    const linksMap = new Map();
+    const linksMap    = new Map();
+
+    const dateFrom = filterDateFrom ? new Date(filterDateFrom).getTime() : 0;
+    const dateTo   = filterDateTo   ? new Date(filterDateTo + 'T23:59:59').getTime() : Infinity;
 
     rawTransactions.forEach(tx => {
-      tx.postings.forEach(posting => {
-        if (filter !== 'all' && posting.asset !== filter) return;
+      const ts = tx.timestamp;
+      if (ts < dateFrom || ts > dateTo) return;
 
-        const src = posting.source;
-        const dst = posting.destination;
+      tx.postings.forEach(p => {
+        if (filterAsset !== 'all' && p.asset !== filterAsset) return;
 
-        if (!accountsMap.has(src)) {
-          accountsMap.set(src, { id: src, type: nodeType(src) });
-        }
-        if (!accountsMap.has(dst)) {
-          accountsMap.set(dst, { id: dst, type: nodeType(dst) });
-        }
+        const src = p.source;
+        const dst = p.destination;
 
-        const key = `${src}||${dst}||${posting.asset}`;
+        if (!accountsMap.has(src)) accountsMap.set(src, { id: src, type: nodeType(src) });
+        if (!accountsMap.has(dst)) accountsMap.set(dst, { id: dst, type: nodeType(dst) });
+
+        const key = `${src}||${dst}||${p.asset}`;
         if (linksMap.has(key)) {
-          const existing = linksMap.get(key);
-          existing.amount += posting.amount;
-          existing.count += 1;
+          const e = linksMap.get(key);
+          e.amount += p.amount;
+          e.count  += 1;
         } else {
           linksMap.set(key, {
-            id: key,
-            source: src,
-            target: dst,
-            asset: posting.asset,
-            amount: posting.amount,
-            count: 1,
+            id: key, source: src, target: dst,
+            asset: p.asset, amount: p.amount, count: 1,
           });
         }
       });
     });
 
-    this.setState({
-      ready: true,
-      loading: false,
-      nodes: Array.from(accountsMap.values()),
-      links: Array.from(linksMap.values()),
-    });
+    // ── Search: ego-network filter ─────────────────────────────────────────
+    const query = searchQuery.trim().toLowerCase();
+    let highlightedIds = new Set();
+
+    if (query) {
+      // Find directly matched node IDs
+      const matchedIds = new Set(
+        Array.from(accountsMap.keys()).filter(id => id.toLowerCase().includes(query))
+      );
+
+      if (matchedIds.size > 0) {
+        highlightedIds = matchedIds;
+
+        // Expand to 1-hop neighbors
+        const egoIds = new Set(matchedIds);
+        linksMap.forEach(l => {
+          if (matchedIds.has(l.source)) egoIds.add(l.target);
+          if (matchedIds.has(l.target)) egoIds.add(l.source);
+        });
+
+        // Remove nodes outside ego network
+        for (const id of accountsMap.keys()) {
+          if (!egoIds.has(id)) accountsMap.delete(id);
+        }
+
+        // Remove links that cross out of ego network
+        for (const [k, l] of linksMap.entries()) {
+          if (!egoIds.has(l.source) || !egoIds.has(l.target)) linksMap.delete(k);
+        }
+      } else {
+        // No match: show nothing
+        accountsMap.clear();
+        linksMap.clear();
+      }
+    }
+
+    // ── Performance cap: top N nodes by total flow volume ─────────────────
+    let nodes     = Array.from(accountsMap.values());
+    let links     = Array.from(linksMap.values());
+    const totalNodes = nodes.length;
+    let limited   = false;
+
+    if (!query && maxNodes !== 'all' && nodes.length > maxNodes) {
+      limited = true;
+      const volMap = new Map();
+      links.forEach(l => {
+        volMap.set(l.source, (volMap.get(l.source) || 0) + l.amount);
+        volMap.set(l.target, (volMap.get(l.target) || 0) + l.amount);
+      });
+      nodes.sort((a, b) => (volMap.get(b.id) || 0) - (volMap.get(a.id) || 0));
+      const kept = new Set(nodes.slice(0, maxNodes).map(n => n.id));
+      nodes = nodes.filter(n => kept.has(n.id));
+      links = links.filter(l => kept.has(l.source) && kept.has(l.target));
+    }
+
+    this.setState({ nodes, links, highlightedIds, totalNodes, limited, ready: true, loading: false });
   }
 
-  handleAssetFilter(e) {
+  // ── Filter handlers ──────────────────────────────────────────────────────
+  handleSearch(e) {
     const value = e.target.value;
-    this.setState({ filterAsset: value }, () => this.buildGraph(value));
+    this.setState({ searchQuery: value });
+    clearTimeout(this._searchTimer);
+    this._searchTimer = setTimeout(this.applyFilters, 280);
   }
 
   render() {
-    const { ready, loading, nodes, links, filterAsset, availableAssets } = this.state;
+    const {
+      loading, ready, nodes, links, highlightedIds,
+      filterAsset, availableAssets, filterDateFrom, filterDateTo,
+      searchQuery, maxNodes, dateRange,
+      totalNodes, limited,
+    } = this.state;
+
+    const hasSearch  = searchQuery.trim().length > 0;
+    const noResults  = ready && nodes.length === 0;
 
     return (
       <Wrapper>
         <div className="top-container mt20 mb40">
-          <div className="header-panel">
-            <div className="header-left">
+
+          {/* Header */}
+          <div className="page-header">
+            <div>
               <h1>Transaction Graph</h1>
-              <p>Interactive fund flow visualization between accounts</p>
+              <p>Interactive fund flow visualization — accounts as nodes, transfers as edges</p>
             </div>
           </div>
 
+          {/* Filter bar */}
           <div className="filter-bar">
-            <label>Asset</label>
-            <select value={filterAsset} onChange={this.handleAssetFilter}>
-              <option value="all">All assets</option>
-              {availableAssets.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
 
-            <span className="hint">Drag nodes · Scroll to zoom · Click account to open</span>
+            {/* Search */}
+            <div className="filter-group">
+              <label>Search</label>
+              <input
+                type="text"
+                placeholder="account name…"
+                value={searchQuery}
+                onChange={this.handleSearch}
+              />
+              {hasSearch && (
+                <button className="search-clear" onClick={() => this.setState({ searchQuery: '' }, this.applyFilters)}>
+                  ✕
+                </button>
+              )}
+            </div>
 
-            <button className="refresh-btn" onClick={this.fetch}>
-              Refresh
+            <div className="divider" />
+
+            {/* Asset */}
+            <div className="filter-group">
+              <label>Asset</label>
+              <select
+                value={filterAsset}
+                onChange={e => this.setState({ filterAsset: e.target.value }, this.applyFilters)}
+              >
+                <option value="all">All assets</option>
+                {availableAssets.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+
+            <div className="divider" />
+
+            {/* Date range */}
+            <div className="filter-group">
+              <label>From</label>
+              <input
+                type="date"
+                value={filterDateFrom}
+                min={dateRange.min}
+                max={filterDateTo || dateRange.max}
+                onChange={e => this.setState({ filterDateFrom: e.target.value }, this.applyFilters)}
+              />
+            </div>
+            <div className="filter-group">
+              <label>To</label>
+              <input
+                type="date"
+                value={filterDateTo}
+                min={filterDateFrom || dateRange.min}
+                max={dateRange.max}
+                onChange={e => this.setState({ filterDateTo: e.target.value }, this.applyFilters)}
+              />
+            </div>
+
+            <div className="divider" />
+
+            {/* Max nodes */}
+            <div className="filter-group">
+              <label>Max nodes</label>
+              <select
+                value={maxNodes}
+                onChange={e => {
+                  const v = e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10);
+                  this.setState({ maxNodes: v }, this.applyFilters);
+                }}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={60}>60</option>
+                <option value={100}>100</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+
+            <button className="refresh-btn" onClick={this.fetch} disabled={loading}>
+              {loading ? '…' : '↻'} Refresh
             </button>
           </div>
 
+          {/* Result info line */}
+          {ready && !noResults && (
+            <div className="result-info">
+              {hasSearch && (
+                <>
+                  Ego network of <span className="tag">{searchQuery}</span>
+                  &mdash; {nodes.length} accounts, {links.length} flows
+                </>
+              )}
+              {!hasSearch && limited && (
+                <>
+                  Showing top {nodes.length} / {totalNodes} accounts by volume
+                  &nbsp;·&nbsp; {links.length} flows
+                </>
+              )}
+              {!hasSearch && !limited && (
+                <>{nodes.length} accounts · {links.length} flows</>
+              )}
+            </div>
+          )}
+
+          {/* Loading */}
           {loading && (
             <div className="loading-state">
               <div className="spinner" />
@@ -294,17 +528,32 @@ class TransactionGraph extends React.Component {
             </div>
           )}
 
-          {ready && nodes.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-icon">◎</div>
-              <p>No transactions found</p>
-              <p style={{ fontSize: 12 }}>Execute some FaRl scripts to see fund flows here</p>
+          {/* No results */}
+          {noResults && !loading && (
+            <div className="no-results">
+              <div className="icon">◎</div>
+              {hasSearch
+                ? <p>No account matching <strong>"{searchQuery}"</strong></p>
+                : <p>No transactions found</p>
+              }
+              <span className="sub">
+                {hasSearch
+                  ? 'Try a different search term'
+                  : 'Execute some FaRl scripts to see fund flows here'
+                }
+              </span>
             </div>
           )}
 
+          {/* Graph */}
           {ready && nodes.length > 0 && (
-            <GraphVisualization nodes={nodes} links={links} />
+            <GraphVisualization
+              nodes={nodes}
+              links={links}
+              highlightedIds={highlightedIds}
+            />
           )}
+
         </div>
       </Wrapper>
     );
