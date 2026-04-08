@@ -37,43 +37,16 @@ class Ledger {
 
   getTransactions(query) {
     const params = query || {};
-  
-    console.log(params);
-  
-    const p = new Promise((resolve, reject) => {
-      axios
-        .get(url(`/${this.name}/transactions`), {
-          params,
-        })
-        .then((res) => {
-          resolve(res.data);
-        })
-        .catch((e) => {
-          reject(e);
-        });
-    });
-  
-    return p;
+    return axios
+      .get(url(`/${this.name}/transactions`), { params })
+      .then(res => res.data);
   }
 
   getAccounts(query) {
     const params = query || {};
-
-    const p = new Promise((resolve, reject) => {
-      axios
-        .get(url(`/${this.name}/accounts`), {
-          params,
-        })
-        .then((res) => {
-          console.log(res.data);
-          resolve(res.data);
-        })
-        .catch(() => {
-          reject();
-        });
-    });
-  
-    return p;
+    return axios
+      .get(url(`/${this.name}/accounts`), { params })
+      .then(res => res.data);
   }
 
   getAccount(address) {

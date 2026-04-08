@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import ledger from '../lib/ledger';
+import fetchAllTransactions from '../lib/fetchAllTransactions';
 import GraphVisualization from '../components/GraphVisualization.jsx';
 import EdgeDetailPanel from '../components/EdgeDetailPanel.jsx';
 
@@ -228,18 +228,8 @@ class TransactionGraph extends React.Component {
   // ── Fetch all pages ──────────────────────────────────────────────────────
   fetch() {
     this.setState({ loading: true, ready: false });
-    const all = [];
 
-    const fetchPage = query =>
-      ledger().getTransactions(query).then(data => {
-        const page = data.cursor.data || [];
-        all.push(...page);
-        if (page.length > 0 && page.length >= data.cursor.page_size)
-          return fetchPage({ after: page[page.length-1].txid });
-        return all;
-      });
-
-    fetchPage({}).then(txs => {
+    fetchAllTransactions().then(txs => {
       const assets = new Set();
       let minTs = Infinity, maxTs = -Infinity;
       txs.forEach(tx => {

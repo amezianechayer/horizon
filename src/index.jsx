@@ -9,7 +9,8 @@ import {
   Route,
 } from "react-router-dom";
 
-import {getInfo, url} from './lib/ledger';
+import { getInfo, url } from './lib/ledger';
+import useTheme from './lib/useTheme';
 
 import Navbar from './parts/Navbar.jsx';
 import Home from './pages/Home.jsx';
@@ -20,93 +21,73 @@ import Create from './pages/Create.jsx';
 import TransactionGraph from './pages/TransactionGraph.jsx';
 import Analytics from './pages/Analytics.jsx';
 import ScrollToTop from './parts/Scroll.jsx';
-import Panel from './parts/Panel.jsx';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background: var(--bg);
   color: var(--text-1);
-  font-family: var(--font-ui);
+  font-family: var(--font-ui, 'Inter', system-ui, sans-serif);
+  transition: background 0.25s, color 0.25s;
 
   a { text-decoration: none; color: inherit; }
-
-  button {
-    font-family: var(--font-ui);
-    cursor: pointer;
-  }
+  button { font-family: inherit; cursor: pointer; }
 `;
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
+const ErrorPanel = styled.div`
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
 
-    this.state = {
-      ready: false,
-      error: false,
-      info: {},
-    };
-  }
+  h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-1); }
+  p  { font-size: 13px; color: var(--text-3); font-family: 'Roboto Mono', monospace; }
+`;
 
-  componentWillMount() {
+function AppInner() {
+  const { theme, toggle } = useTheme();
+  const [ready, setReady] = React.useState(false);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
     getInfo()
-    .then(() => {
-      this.setState({
-        ready: true,
-      });
-    })
-    .catch(e => {
-      this.setState({
-        ready: true,
-        error: true,
-      });
-    });
-  }
+      .then(() => setReady(true))
+      .catch(() => { setReady(true); setError(true); });
+  }, []);
 
-  render() {
-    if (this.state.error) {
-      return (
-        <Wrapper>
-          <Panel>
-            <h1>Failed to connect to the ledger</h1>
-            <h2 className="opacity-05 fw300">Is the ledger started on {url()}?</h2>
-          </Panel>
-        </Wrapper>
-      );
-    }
+  if (!ready) return null;
 
+  if (error) {
     return (
       <Wrapper>
-        <Router>
-          <ScrollToTop></ScrollToTop>
-          <Navbar></Navbar>
-          <Switch>
-            <Route path="/accounts/:id" exact>
-              <Account></Account>
-            </Route>
-            <Route path="/accounts" exact>
-              <Accounts></Accounts>
-            </Route>
-            <Route path="/transactions" exact>
-              <Transactions></Transactions>
-            </Route>
-            <Route path="/graph" exact>
-              <TransactionGraph></TransactionGraph>
-            </Route>
-            <Route path="/analytics" exact>
-              <Analytics></Analytics>
-            </Route>
-            <Route path="/new" exact>
-              <Create></Create>
-            </Route>
-            <Route path="/">
-              <Home></Home>
-            </Route>
-          </Switch>
-        </Router>
+        <ErrorPanel>
+          <h1>Cannot connect to ledger</h1>
+          <p>{url()}</p>
+        </ErrorPanel>
       </Wrapper>
     );
   }
+
+  return (
+    <Wrapper>
+      <Router>
+        <ScrollToTop />
+        <Navbar theme={theme} onToggleTheme={toggle} />
+        <Switch>
+          <Route path="/accounts/:id" exact><Account /></Route>
+          <Route path="/accounts"     exact><Accounts /></Route>
+          <Route path="/transactions" exact><Transactions /></Route>
+          <Route path="/graph"        exact><TransactionGraph /></Route>
+          <Route path="/analytics"    exact><Analytics /></Route>
+          <Route path="/new"          exact><Create /></Route>
+          <Route path="/"><Home /></Route>
+        </Switch>
+      </Router>
+    </Wrapper>
+  );
 }
 
 const container = document.querySelector('#app');
-ReactDOM.render(React.createElement(App), container);
+ReactDOM.render(React.createElement(AppInner), container);

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as d3 from 'd3';
 import styled from 'styled-components';
-import ledger from '../lib/ledger';
+import fetchAllTransactions from '../lib/fetchAllTransactions';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles
@@ -434,19 +434,7 @@ function Analytics() {
   const [data, setData]       = useState(null);
 
   useEffect(() => {
-    const all = [];
-
-    const fetchPage = query =>
-      ledger().getTransactions(query).then(res => {
-        const page = res.cursor.data || [];
-        all.push(...page);
-        if (page.length > 0 && page.length >= res.cursor.page_size) {
-          return fetchPage({ after: page[page.length - 1].txid });
-        }
-        return all;
-      });
-
-    fetchPage({})
+    fetchAllTransactions()
       .then(txs => {
         setData(processData(txs));
         setLoading(false);

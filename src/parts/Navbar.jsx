@@ -7,10 +7,15 @@ const Nav = styled.nav`
   top: 0;
   z-index: 100;
   height: 56px;
-  background: rgba(8, 11, 16, 0.85);
+  background: rgba(8, 11, 16, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
+  transition: background 0.25s, border-color 0.25s;
+
+  [data-theme="light"] & {
+    background: rgba(255, 255, 255, 0.88);
+  }
 
   .inner {
     max-width: 1280px;
@@ -19,25 +24,19 @@ const Nav = styled.nav`
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
   }
 
   .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-1);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     flex-shrink: 0;
-
     img { border-radius: 6px; }
-
-    .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--accent);
-    }
   }
 
   .links {
@@ -50,10 +49,10 @@ const Nav = styled.nav`
   .nav-link {
     position: relative;
     padding: 6px 10px;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--text-2);
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
     transition: color 0.15s, background 0.15s;
     white-space: nowrap;
 
@@ -64,7 +63,6 @@ const Nav = styled.nav`
 
     &.active {
       color: var(--text-1);
-
       &::after {
         content: '';
         position: absolute;
@@ -88,31 +86,53 @@ const Nav = styled.nav`
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 10px;
+    padding: 4px 10px;
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 11px;
     color: var(--text-2);
-    font-family: var(--font-mono);
+    font-family: 'Roboto Mono', monospace;
 
-    .indicator {
+    .dot {
       width: 6px; height: 6px; border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 6px var(--accent);
+      flex-shrink: 0;
+    }
+  }
+
+  .theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-2);
+    font-size: 15px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      background: var(--surface-3);
+      border-color: var(--border-2);
+      color: var(--text-1);
     }
   }
 `;
 
 const LINKS = [
-  { to: '/',            label: 'Overview',     exact: true },
-  { to: '/accounts',   label: 'Accounts' },
+  { to: '/',             label: 'Overview',      exact: true },
+  { to: '/accounts',     label: 'Accounts' },
   { to: '/transactions', label: 'Transactions' },
-  { to: '/graph',      label: 'Graph' },
-  { to: '/analytics',  label: 'Analytics' },
+  { to: '/graph',        label: 'Graph' },
+  { to: '/analytics',    label: 'Analytics' },
 ];
 
-function Navbar() {
+function Navbar({ theme, onToggleTheme }) {
   const location = useLocation();
 
   function isActive(to, exact) {
@@ -140,9 +160,17 @@ function Navbar() {
 
         <div className="right">
           <div className="ledger-badge">
-            <div className="indicator" />
+            <div className="dot" />
             <span>quickstart</span>
           </div>
+
+          <button
+            className="theme-btn"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? '☀' : '☽'}
+          </button>
         </div>
       </div>
     </Nav>
