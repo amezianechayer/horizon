@@ -1,23 +1,17 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-const Wrapper = styled.span`
-  font-family: 'Roboto Mono', monospace;
+const Span = styled.span`
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
 
-  &.green {
-    color: rgb(91, 181, 124);
-  }
-
-  &.red {
-    color: rgb(254, 118, 118);
-  }
+  &.green { color: var(--accent); }
+  &.red   { color: var(--red); }
 `;
 
-function Amount(props) {
-  const amount = props.data || props.children
-  return (
-    <Wrapper className={props.color}>{amount}</Wrapper>
-  );
+function Amount({ data, children, color }) {
+  return <Span className={color}>{data || children}</Span>;
 }
 
 export default Amount;

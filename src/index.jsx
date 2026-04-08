@@ -23,54 +23,16 @@ import ScrollToTop from './parts/Scroll.jsx';
 import Panel from './parts/Panel.jsx';
 
 const Wrapper = styled.div`
-  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-ui);
 
-  button, a.button {
-    display: inline-block;
-    border: none;
-    border-radius: 4px;
+  a { text-decoration: none; color: inherit; }
+
+  button {
+    font-family: var(--font-ui);
     cursor: pointer;
-
-    padding: 9px 14px;
-    font-size: 14px;
-
-    &.primary {
-      border: solid 2px black;
-      border-radius: 100px;
-      background: white;
-      color: black;
-      font-weight: 500;
-
-      background: black;
-      color: white;
-    }
-
-    &.action {
-      background: #13e07e;
-      color: #222;
-      border-radius: 8px;
-      font-weight: 500;
-      padding: 12px;
-    }
-  }
-
-  input[type="text"], input[type="email"] {
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 100px;
-    border-radius: 8px;
-    border: none;
-    margin-left: 0;
-
-    /* &:focus {
-      outline: none;
-      outline: solid 4px rgba(0, 0, 0, 0.2);
-    } */
-  }
-
-  a {
-    text-decoration: none;
-    color: inherit;
   }
 `;
 

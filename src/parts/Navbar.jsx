@@ -1,174 +1,151 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
-const Wrapper = styled.div`
+const Nav = styled.nav`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 56px;
+  background: rgba(8, 11, 16, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 
-  .main {
-    height: 80px;
-    width: calc(100% - 0px);
-    padding: 0 20px;
-    box-sizing: border-box;
-    margin: auto;
+  .inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 100%;
     display: flex;
     align-items: center;
-
-    background: #111;
-    color: white;
-
-    .logo {
-      a {
-        /* color: #222; */
-        font-size: 20px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-      }
-    }
-
-    ul.links {
-      display: flex;
-      list-style-type: none;
-
-      li {
-        margin: 16px;
-      }
-    }
-
-    div.selector {
-      /* margin-left: auto; */
-      position: relative;
-      padding: 10px;
-      background: #343434;
-      border: solid 2px #444;
-      border-radius: 8px;
-
-      .dropdown {
-        position: absolute;
-        display: none;
-        padding: 10px;
-        background: white;
-        border-radius: 4px;
-        color: #222;
-        margin-top: 10px;
-        width: 180px;
-        min-height: 100px;
-        transform: translateX(-100px);
-        box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.05);
-
-        ul {
-          list-style-type: none;
-          margin: 0;
-          padding: 0;
-
-          li {
-            /* background: #F5F5F5; */
-            padding: 10px;
-            padding-left: 0;
-            border-bottom: solid 2px #EEE;
-          }
-        }
-      }
-
-      &:hover .dropdown {
-        display: block;
-      }
-    }
-
-    div.right-links {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-    }
-
-    .search {
-      display: none;
-      margin-left: 100px;
-      width: 300px;
-
-      input {
-        display: block;
-        width: 100%;
-        background: #333;
-        color: #EEE;
-        &:focus {
-          outline: 0;
-          border: solid 4px #444;
-        }
-      }
-    }
-
-    /* box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.08); */
-    /* border-bottom: solid 2px rgba(0, 0, 0, 0.1); */
+    gap: 32px;
   }
 
-  .sub {
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+
+    img { border-radius: 6px; }
+
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+    }
+  }
+
+  .links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    list-style: none;
+  }
+
+  .nav-link {
+    position: relative;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-2);
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--text-1);
+      background: var(--surface-3);
+    }
+
+    &.active {
+      color: var(--text-1);
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 10px; right: 10px;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 2px 2px 0 0;
+      }
+    }
+  }
+
+  .right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ledger-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+
+    .indicator {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
   }
 `;
 
-function Navbar() {
-  return (
-    <Wrapper>
-      <div className="main">
-        <div className="logo">
-          <Link to="/">
-            <img src="/img/corren-square.png" width="32" className="mr10"/>
-            {/* <span>Corren</span> */}
-            <span>Horizon</span>
-          </Link>
-        </div>
-        <ul className="ml20 fw500 opacity-075 links">
-          <li>
-            <Link to="/accounts">
-              <span>Accounts</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/transactions">
-              <span>Transactions</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/graph">
-              <span>Graph</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/analytics">
-              <span>Analytics</span>
-            </Link>
-          </li>
-        </ul>
-        <div className="search">
-          <input type="text"/>
-        </div>
-        <div className="right-links">
-          <div>
-            <div className="selector">
-              <span>Quickstart</span>
-              <div className="dropdown">
-                {/* <div className="fw500 mb10">
-                  <span>Ledger selection</span>
-                </div> */}
-                <ul>
-                  <li>
-                    <span className="name">Quickstart</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          {/* <div>
-            <Link className="button action" to="/new">
-              <span class="material-icon">Create</span>
-            </Link>
-          </div> */}
-        </div>
-      </div>
-      <div className="sub">
+const LINKS = [
+  { to: '/',            label: 'Overview',     exact: true },
+  { to: '/accounts',   label: 'Accounts' },
+  { to: '/transactions', label: 'Transactions' },
+  { to: '/graph',      label: 'Graph' },
+  { to: '/analytics',  label: 'Analytics' },
+];
 
+function Navbar() {
+  const location = useLocation();
+
+  function isActive(to, exact) {
+    if (exact) return location.pathname === to;
+    return location.pathname.startsWith(to);
+  }
+
+  return (
+    <Nav>
+      <div className="inner">
+        <Link to="/" className="logo">
+          <img src="/img/corren-square.png" width="26" height="26" />
+          <span>Horizon</span>
+        </Link>
+
+        <ul className="links">
+          {LINKS.map(({ to, label, exact }) => (
+            <li key={to}>
+              <Link to={to} className={`nav-link${isActive(to, exact) ? ' active' : ''}`}>
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <div className="right">
+          <div className="ledger-badge">
+            <div className="indicator" />
+            <span>quickstart</span>
+          </div>
+        </div>
       </div>
-    </Wrapper>
+    </Nav>
   );
 }
 

@@ -2,67 +2,49 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
-const Addr = styled.div`
-  display: inline-block;
+const Addr = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--blue);
+  background: var(--blue-dim);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
 
-  font-family: 'Roboto Mono', monospace;
-  /* font-family: 'Inter', sans-serif; */
-  font-weight: 300;
-  /* font-size: 13px; */
+  &:hover {
+    border-color: var(--blue);
+    background: rgba(88, 166, 255, 0.18);
+  }
 
-  cursor: pointer;
+  &.world {
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.1);
+    &:hover { border-color: #f85149; background: rgba(248,81,73,0.18); }
+  }
 
-  span {
-    display: inline-block;
-
-    /* border-radius: var(--theme-radius); */
-    border-radius: var(--theme-small-radius);
-    /* background-color: hsla(189, 89%, 90%, 1); */
-    
-    background-color: ${props => {
-      if (props.ns === 'default' && false) {
-        return "hsla(50.36, 88.37%, 82.81%, 1)";
-      } else {
-        return "hsla(170, 100%, 90%, 1)";
-      }
-    }};
-
-    color: ${props => {
-      if (props.ns === 'default' && false) {
-        return "hsla(39.17, 55.91%, 56.9%, 1)";
-      } else {
-        return "hsla(183, 29%, 40%, 1)";
-      }
-    }};
-
-    padding: 5px 8px;
+  &.sub {
+    color: #79c0ff;
+    background: rgba(121, 192, 255, 0.08);
+    &:hover { border-color: #79c0ff; background: rgba(121,192,255,0.15); }
   }
 `;
 
-class Address extends React.Component {
-  constructor(props) {
-    super(props);
+function Address({ data }) {
+  const isWorld = data === '@world' || data.startsWith('@world');
+  const isSub   = !isWorld && data.includes(':');
+  const cls     = isWorld ? 'world' : isSub ? 'sub' : '';
 
-    const parts = props.data.split(':');
-
-    let ns = 'default';
-    if (parts.length > 1) {
-      ns = parts[0];
-    }
-
-    this.state = {
-      ns,
-    };
-  }
-  render() {
-    return (
-      <Link to={`/accounts/${this.props.data}`}>
-        <Addr ns={this.state.ns} className="address">
-          <span>{this.props.data}</span>
-        </Addr>
-      </Link>
-    )
-  }
+  return (
+    <Addr to={`/accounts/${data}`} className={cls}>
+      {data}
+    </Addr>
+  );
 }
 
 export default Address;
