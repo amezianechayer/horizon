@@ -13,6 +13,7 @@ import { getInfo, url } from './lib/ledger';
 import useTheme from './lib/useTheme';
 
 import Navbar from './parts/Navbar.jsx';
+import CommandPalette from './components/CommandPalette.jsx';
 import Home from './pages/Home.jsx';
 import Transactions from './pages/Transactions.jsx';
 import Accounts from './pages/Accounts.jsx';
@@ -50,6 +51,18 @@ function AppInner() {
   const { theme, toggle } = useTheme();
   const [ready, setReady] = React.useState(false);
   const [error, setError] = React.useState(false);
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(v => !v);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   React.useEffect(() => {
     getInfo()
@@ -75,6 +88,7 @@ function AppInner() {
       <Router>
         <ScrollToTop />
         <Navbar theme={theme} onToggleTheme={toggle} />
+        {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
         <Switch>
           <Route path="/accounts/:id" exact><Account /></Route>
           <Route path="/accounts"     exact><Accounts /></Route>

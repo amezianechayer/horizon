@@ -102,6 +102,28 @@ const Nav = styled.nav`
     }
   }
 
+  .nav-link-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+
+    .notif-badge {
+      position: absolute;
+      top: -2px; right: -4px;
+      min-width: 16px; height: 16px;
+      padding: 0 4px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite;
+      pointer-events: none;
+    }
+  }
+
   .theme-btn {
     display: flex;
     align-items: center;
@@ -134,6 +156,28 @@ const LINKS = [
 
 function Navbar({ theme, onToggleTheme }) {
   const location = useLocation();
+  const [txBadge, setTxBadge] = React.useState(0);
+
+  React.useEffect(() => {
+    function onNewTxs(e) {
+      // Only show badge if not currently on /transactions
+      if (!window.location.pathname.startsWith('/transactions')) {
+        setTxBadge(n => n + (e.detail?.count || 1));
+      }
+    }
+    function onViewed() { setTxBadge(0); }
+    window.addEventListener('horizon:new-txs', onNewTxs);
+    window.addEventListener('horizon:txs-viewed', onViewed);
+    return () => {
+      window.removeEventListener('horizon:new-txs', onNewTxs);
+      window.removeEventListener('horizon:txs-viewed', onViewed);
+    };
+  }, []);
+
+  // Clear badge when navigating to /transactions
+  React.useEffect(() => {
+    if (location.pathname.startsWith('/transactions')) setTxBadge(0);
+  }, [location.pathname]);
 
   function isActive(to, exact) {
     if (exact) return location.pathname === to;
@@ -151,9 +195,14 @@ function Navbar({ theme, onToggleTheme }) {
         <ul className="links">
           {LINKS.map(({ to, label, exact }) => (
             <li key={to}>
-              <Link to={to} className={`nav-link${isActive(to, exact) ? ' active' : ''}`}>
-                {label}
-              </Link>
+              <div className="nav-link-wrap">
+                <Link to={to} className={`nav-link${isActive(to, exact) ? ' active' : ''}`}>
+                  {label}
+                </Link>
+                {to === '/transactions' && txBadge > 0 && (
+                  <span className="notif-badge">{txBadge > 99 ? '99+' : txBadge}</span>
+                )}
+              </div>
             </li>
           ))}
         </ul>

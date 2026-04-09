@@ -198,8 +198,9 @@ class TransactionsTable extends React.Component {
   }
 
   fetch() {
+    const extraFilters = this.props.filters || {};
     ledger()
-    .getTransactions(this.state.pagination.query)
+    .getTransactions({ ...this.state.pagination.query, ...extraFilters })
     .then((data) => {
       let transactions = data.cursor.data;
 
@@ -243,8 +244,14 @@ class TransactionsTable extends React.Component {
     })
   }
 
-  componentDidMount() {
-    this.fetch();
+  componentDidMount() { this.fetch(); }
+
+  componentDidUpdate(prevProps) {
+    if (JSON.stringify(prevProps.filters) !== JSON.stringify(this.props.filters)) {
+      this.setState({
+        pagination: { total:0, pageSize:0, previous:[], query:{} }
+      }, this.fetch);
+    }
   }
 
   render() {
