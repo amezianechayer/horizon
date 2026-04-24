@@ -3,6 +3,18 @@ import styled from 'styled-components';
 import { useParams, Link } from 'react-router-dom';
 import ledger from '../lib/ledger';
 
+const REQUIRED_TERMS = {
+  MURABAHA:   ['markup', 'asset_description'],
+  MUDARABAH:  ['profit_ratio', 'capital'],
+  MUSHARAKAH: ['profit_ratio', 'loss_ratio'],
+  IJARA:      ['rent_amount', 'asset_description', 'duration'],
+  SUKUK:      ['underlying_asset', 'face_value'],
+  QARD_HASSAN: [],
+};
+const FORBIDDEN_TERMS = {
+  QARD_HASSAN: ['markup', 'interest', 'profit', 'return'],
+};
+
 const TYPE_COLOR = {
   MURABAHA:   'var(--accent)',
   MUDARABAH:  'var(--blue)',
@@ -101,6 +113,25 @@ const Wrapper = styled.div`
   .cert-hash { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
   .no-certs { padding: 28px; text-align: center; color: var(--text-3); font-size: 13px; }
 
+  .compliance-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .term-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    border: 1px solid; font-family: var(--font-mono);
+  }
+  .term-ok    { color: var(--accent); border-color: var(--accent-dim, #00c97444); background: #00c97410; }
+  .term-miss  { color: var(--red);    border-color: #ff444444;                    background: #ff444410; }
+  .term-warn  { color: var(--yellow); border-color: #f5c51844;                    background: #f5c51810; }
+  .compliance-msg {
+    margin-top: 10px; font-size: 12px; padding: 8px 12px; border-radius: var(--r);
+    border: 1px solid;
+  }
+  .compliance-msg.pass { color: var(--accent); border-color: #00c97433; background: #00c97408; }
+  .compliance-msg.fail { color: var(--red);    border-color: #ff444433; background: #ff444408; }
+  .compliance-msg.warn { color: var(--yellow); border-color: #f5c51833; background: #f5c51808; }
+
   .err { font-size: 13px; color: var(--red); padding: 20px 0; }
   .loading { padding: 60px 0; text-align: center; color: var(--text-3); font-size: 13px; }
 `;
@@ -115,6 +146,47 @@ const TRANSITIONS = {
   COMPLETED: [],
   CANCELLED: [],
 };
+
+function TermsCompliance({ type, terms }) {
+  const required = REQUIRED_TERMS[type] || [];
+  const forbidden = FORBIDDEN_TERMS[type] || [];
+  const keys = Object.keys(terms || {});
+
+  const missing  = required.filter(f => !keys.includes(f));
+  const present  = required.filter(f =>  keys.includes(f));
+  const violated = forbidden.filter(f => keys.includes(f));
+
+  const allOk = missing.length === 0 && violated.length === 0;
+
+  if (required.length === 0 && forbidden.length === 0) {
+    return (
+      <div className="compliance-msg pass">No required terms for this contract type.</div>
+    );
+  }
+
+  return (
+    <>
+      <div className="compliance-grid">
+        {present.map(f  => <span key={f} className="term-chip term-ok">✓ {f}</span>)}
+        {missing.map(f  => <span key={f} className="term-chip term-miss">✗ {f}</span>)}
+        {violated.map(f => <span key={f} className="term-chip term-warn">⚠ {f}</span>)}
+      </div>
+      {allOk && (
+        <div className="compliance-msg pass" style={{ marginTop: 10 }}>All required terms present — contract will pass Gharar validation.</div>
+      )}
+      {missing.length > 0 && (
+        <div className="compliance-msg fail" style={{ marginTop: 10 }}>
+          Missing: {missing.join(', ')} — script execution will be blocked (Gharar).
+        </div>
+      )}
+      {violated.length > 0 && (
+        <div className="compliance-msg warn" style={{ marginTop: 10 }}>
+          Forbidden profit terms detected: {violated.join(', ')} — violates Qard Hassan rules (Riba prohibition).
+        </div>
+      )}
+    </>
+  );
+}
 
 function Contract() {
   const { id } = useParams();
@@ -222,6 +294,11 @@ function Contract() {
           <div className="terms-block">{termsFormatted || '{}'}</div>
         </div>
 
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-title">Sharia Compliance — Terms</div>
+          <TermsCompliance type={contract.type} terms={contract.terms} />
+        </div>
+
         <div className="card">
           <div className="card-title">Certificates</div>
           {certs.length === 0 ? (
@@ -235,8 +312,8 @@ function Contract() {
               </thead>
               <tbody>
                 {certs.map(cert => (
-                  <tr key={cert.hash}>
-                    <td><span className="cert-hash">{cert.hash?.slice(0, 16)}…</span></td>
+                  <tr key={cert.id}>
+                    <td><span className="cert-hash">{cert.id?.slice(0, 16)}…</span></td>
                     <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{cert.txid ?? '—'}</td>
                     <td>{new Date(cert.issued_at).toLocaleString()}</td>
                   </tr>

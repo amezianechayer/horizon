@@ -113,6 +113,18 @@ const Wrapper = styled.div`
   }
 
   .err { font-size: 12px; color: var(--red); margin-top: 10px; }
+
+  .terms-hint {
+    margin-top: 6px; padding: 8px 10px; border-radius: var(--r);
+    background: var(--surface-2); border: 1px solid var(--border);
+    font-size: 11px; color: var(--text-3); line-height: 1.6;
+    .hint-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+    .hint-chip {
+      padding: 2px 7px; border-radius: 20px; font-family: var(--font-mono); font-size: 10px;
+      background: var(--surface); border: 1px solid var(--border-2); color: var(--text-2);
+    }
+    .hint-chip.forbidden { color: var(--red); border-color: #ff444444; background: #ff444410; }
+  }
 `;
 
 function badgeStyle(color) {
@@ -121,6 +133,15 @@ function badgeStyle(color) {
 
 const TYPES = ['MURABAHA','MUDARABAH','MUSHARAKAH','IJARA','SUKUK','QARD_HASSAN'];
 const BLANK = { id: '', type: 'MURABAHA', client: '', bank: '', terms: '{}' };
+
+const TERMS_HINT = {
+  MURABAHA:   { required: ['markup', 'asset_description'], note: 'markup must be fixed and disclosed (FAS-2)' },
+  MUDARABAH:  { required: ['profit_ratio', 'capital'],     note: 'profit_ratio as percentage, e.g. "40%"' },
+  MUSHARAKAH: { required: ['profit_ratio', 'loss_ratio'],  note: 'both ratios required (FAS-4)' },
+  IJARA:      { required: ['rent_amount', 'asset_description', 'duration'], note: 'asset must be identified (FAS-32)' },
+  SUKUK:      { required: ['underlying_asset', 'face_value'], note: 'must be backed by a real asset (FAS-33)' },
+  QARD_HASSAN:{ required: [], forbidden: ['markup','interest','profit'], note: 'no profit terms allowed — benevolent loan only' },
+};
 
 function CreateModal({ onClose, onCreated }) {
   const [form, setForm] = React.useState(BLANK);
@@ -173,6 +194,25 @@ function CreateModal({ onClose, onCreated }) {
             <div className="form-group form-full">
               <label>Terms (JSON)</label>
               <textarea value={form.terms} onChange={e => set('terms', e.target.value)} />
+              {TERMS_HINT[form.type] && (
+                <div className="terms-hint">
+                  {TERMS_HINT[form.type].note}
+                  {TERMS_HINT[form.type].required.length > 0 && (
+                    <div className="hint-chips">
+                      {TERMS_HINT[form.type].required.map(f => (
+                        <span key={f} className="hint-chip">required: {f}</span>
+                      ))}
+                    </div>
+                  )}
+                  {TERMS_HINT[form.type].forbidden && (
+                    <div className="hint-chips">
+                      {TERMS_HINT[form.type].forbidden.map(f => (
+                        <span key={f} className="hint-chip forbidden">forbidden: {f}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           {err && <div className="err">{err}</div>}
