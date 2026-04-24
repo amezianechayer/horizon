@@ -22,6 +22,9 @@ import Create from './pages/Create.jsx';
 import TransactionGraph from './pages/TransactionGraph.jsx';
 import Analytics from './pages/Analytics.jsx';
 import ScrollToTop from './parts/Scroll.jsx';
+import Assets from './pages/Assets.jsx';
+import Contracts from './pages/Contracts.jsx';
+import Contract from './pages/Contract.jsx';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -90,12 +93,15 @@ function AppInner() {
         <Navbar theme={theme} onToggleTheme={toggle} />
         {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
         <Switch>
-          <Route path="/accounts/:id" exact><Account /></Route>
-          <Route path="/accounts"     exact><Accounts /></Route>
-          <Route path="/transactions" exact><Transactions /></Route>
-          <Route path="/graph"        exact><TransactionGraph /></Route>
-          <Route path="/analytics"    exact><Analytics /></Route>
-          <Route path="/new"          exact><Create /></Route>
+          <Route path="/accounts/:id"    exact><Account /></Route>
+          <Route path="/accounts"        exact><Accounts /></Route>
+          <Route path="/transactions"    exact><Transactions /></Route>
+          <Route path="/assets"          exact><Assets /></Route>
+          <Route path="/contracts/:id"   exact><Contract /></Route>
+          <Route path="/contracts"       exact><Contracts /></Route>
+          <Route path="/graph"           exact><TransactionGraph /></Route>
+          <Route path="/analytics"       exact><Analytics /></Route>
+          <Route path="/new"             exact><Create /></Route>
           <Route path="/"><Home /></Route>
         </Switch>
       </Router>

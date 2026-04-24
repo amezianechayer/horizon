@@ -60,8 +60,36 @@ class Ledger {
           reject();
         });
     });
-  
+
     return p;
+  }
+
+  getAssets() {
+    return axios.get(url(`/${this.name}/assets`)).then(res => res.data);
+  }
+
+  createAsset(asset) {
+    return axios.post(url(`/${this.name}/assets`), asset).then(res => res.data);
+  }
+
+  getContracts(query) {
+    return axios.get(url(`/${this.name}/contracts`), { params: query || {} }).then(res => res.data);
+  }
+
+  getContract(id) {
+    return axios.get(url(`/${this.name}/contracts/${id}`)).then(res => res.data);
+  }
+
+  createContract(contract) {
+    return axios.post(url(`/${this.name}/contracts`), contract).then(res => res.data);
+  }
+
+  updateContractStatus(id, status) {
+    return axios.patch(url(`/${this.name}/contracts/${id}/status`), { status }).then(res => res.data);
+  }
+
+  getCertificates(contractId) {
+    return axios.get(url(`/${this.name}/certificates`), { params: { contract_id: contractId } }).then(res => res.data);
   }
 }
 

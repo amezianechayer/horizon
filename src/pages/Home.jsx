@@ -375,6 +375,8 @@ function Home() {
           {[
             { to: '/accounts',     icon: '◎', label: 'Accounts' },
             { to: '/transactions', icon: '⇄', label: 'Transactions' },
+            { to: '/assets',       icon: '◆', label: 'Assets' },
+            { to: '/contracts',    icon: '▣', label: 'Contracts' },
             { to: '/graph',        icon: '◈', label: 'Fund Flow Graph' },
             { to: '/analytics',    icon: '▦', label: 'Analytics' },
           ].map(({ to, icon, label }) => (

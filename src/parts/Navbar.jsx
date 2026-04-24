@@ -150,6 +150,8 @@ const LINKS = [
   { to: '/',             label: 'Overview',      exact: true },
   { to: '/accounts',     label: 'Accounts' },
   { to: '/transactions', label: 'Transactions' },
+  { to: '/assets',       label: 'Assets' },
+  { to: '/contracts',    label: 'Contracts' },
   { to: '/graph',        label: 'Graph' },
   { to: '/analytics',    label: 'Analytics' },
 ];
