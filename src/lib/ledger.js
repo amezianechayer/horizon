@@ -87,9 +87,53 @@ class Ledger {
           reject();
         });
     });
-  
+
     return p;
   }
+
+  // --- sharia contracts ---
+
+  getContracts(query) {
+    return axios
+      .get(url(`/${this.name}/contracts`), {params: query || {}})
+      .then(res => res.data.data);
+  }
+
+  getContract(id) {
+    return axios
+      .get(url(`/${this.name}/contracts/${id}`))
+      .then(res => res.data.data); // {contract, schedule}
+  }
+
+  createContract(body) {
+    return axios
+      .post(url(`/${this.name}/contracts`), body)
+      .then(res => res.data.data)
+      .catch(rethrowApiError);
+  }
+
+  transition(id, name, input) {
+    return axios
+      .post(url(`/${this.name}/contracts/${id}/transitions/${name}`), input || {})
+      .then(res => res.data.data)
+      .catch(rethrowApiError);
+  }
+
+  getAudit(id) {
+    return axios
+      .get(url(`/${this.name}/contracts/${id}/audit`), {params: {verify: 'true'}})
+      .then(res => res.data.data); // {events, chain_valid}
+  }
+}
+
+// normalizes API errors: sharia errors carry {error, message, standard_ref},
+// legacy errors carry {error_message}
+function rethrowApiError(err) {
+  const data = (err.response && err.response.data) || {};
+  const e = new Error(data.message || data.error_message || 'request failed');
+  e.code = data.error;
+  e.standardRef = data.standard_ref;
+  throw e;
 }
 
 function url(path) {
