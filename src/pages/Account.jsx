@@ -24,8 +24,9 @@ function Account() {
     ledger()
     .getAccount(id)
     .then(res => {
+      // API returns {ok, data: account} since the april response refactor
       setData({
-        account: res.account,
+        account: res.data,
       });
     });
   }, []);

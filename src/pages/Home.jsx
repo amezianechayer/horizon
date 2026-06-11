@@ -42,8 +42,9 @@ function Home() {
     ledger()
     .getStats()
     .then(res => {
+      // API returns {ok, data: stats} since the april response refactor
       setData({
-        ...res.stats,
+        ...res.data,
       })
     });
   }, [])
