@@ -138,6 +138,7 @@ class TransitionModal extends React.Component {
               <label>{f.label}</label>
               <input
                 type={f.type === 'number' ? 'number' : 'text'}
+                name={f.name}
                 readOnly={!!f.readonly}
                 value={this.state.values[f.name] !== undefined ? this.state.values[f.name] : (f.value || '')}
                 onChange={e => this.setState({

@@ -55,6 +55,7 @@ class Login extends React.Component {
           <form onSubmit={this.submit}>
             <input
               type="text"
+              name="username"
               placeholder="Username"
               value={this.state.username}
               onChange={e => this.setState({username: e.target.value})}
@@ -62,6 +63,7 @@ class Login extends React.Component {
             />
             <input
               type="password"
+              name="password"
               placeholder="Password"
               value={this.state.password}
               onChange={e => this.setState({password: e.target.value})}

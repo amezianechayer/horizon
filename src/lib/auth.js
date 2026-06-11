@@ -55,7 +55,11 @@ function installUnauthorizedRedirect() {
     err => {
       const status = err.response && err.response.status;
       const reqUrl = (err.config && err.config.url) || '';
-      if (status === 401 && reqUrl.indexOf('/auth/login') === -1
+      // /auth/login failures are shown inline; /auth/me is a probe that
+      // legitimately 401s when there is no session (e.g. auth disabled)
+      if (status === 401
+          && reqUrl.indexOf('/auth/login') === -1
+          && reqUrl.indexOf('/auth/me') === -1
           && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

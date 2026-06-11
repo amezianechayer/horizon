@@ -110,6 +110,7 @@ class ContractCreate extends React.Component {
         <label>{label}</label>
         <input
           type={props.type || 'text'}
+          name={name}
           placeholder={props.placeholder || ''}
           value={this.state[name]}
           onChange={e => this.setState({[name]: e.target.value})}
