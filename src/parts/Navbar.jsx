@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { SessionContext } from '../lib/session.jsx';
+import { logout } from '../lib/auth';
 
 const Wrapper = styled.div`
 
@@ -128,6 +130,11 @@ function Navbar() {
               <span>Transactions</span>
             </Link>
           </li>
+          <li>
+            <Link to="/contracts">
+              <span>Contracts</span>
+            </Link>
+          </li>
         </ul>
         <div className="search">
           <input type="text"/>
@@ -153,6 +160,22 @@ function Navbar() {
               <span class="material-icon">Create</span>
             </Link>
           </div> */}
+          <SessionContext.Consumer>
+            {identity => identity && (
+              <div className="ml10">
+                <span className="opacity-075">
+                  {identity.subject} <em className="opacity-05">({identity.role})</em>
+                </span>
+                <button
+                  className="ml10"
+                  style={{background: '#343434', color: '#eee'}}
+                  onClick={() => logout().then(() => { window.location.href = '/login'; })}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </SessionContext.Consumer>
         </div>
       </div>
       <div className="sub">

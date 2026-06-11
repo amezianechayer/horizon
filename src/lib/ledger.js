@@ -147,8 +147,8 @@ function getInfo() {
     .then(res => {
       resolve(res.data);
     })
-    .catch(() => {
-      reject();
+    .catch(e => {
+      reject(e);
     })
   });
 

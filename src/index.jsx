@@ -10,6 +10,8 @@ import {
 } from "react-router-dom";
 
 import {getInfo, url} from './lib/ledger';
+import {me, installUnauthorizedRedirect} from './lib/auth';
+import {SessionContext} from './lib/session.jsx';
 
 import Navbar from './parts/Navbar.jsx';
 import Home from './pages/Home.jsx';
@@ -17,6 +19,10 @@ import Transactions from './pages/Transactions.jsx';
 import Accounts from './pages/Accounts.jsx';
 import Account from './pages/Account.jsx';
 import Create from './pages/Create.jsx';
+import Login from './pages/Login.jsx';
+import Contracts from './pages/Contracts.jsx';
+import Contract from './pages/Contract.jsx';
+import ContractCreate from './pages/ContractCreate.jsx';
 import ScrollToTop from './parts/Scroll.jsx';
 import Panel from './parts/Panel.jsx';
 
@@ -80,7 +86,10 @@ class App extends React.Component {
       ready: false,
       error: false,
       info: {},
+      identity: null,
     };
+
+    installUnauthorizedRedirect();
   }
 
   componentWillMount() {
@@ -89,8 +98,17 @@ class App extends React.Component {
       this.setState({
         ready: true,
       });
+      me().then(identity => this.setState({identity}));
     })
     .catch(e => {
+      // an HTTP response means the server is alive; a 401 means auth is
+      // enabled and the interceptor is already redirecting to /login —
+      // only a network failure is a real connection error
+      if (e && e.response) {
+        this.setState({ready: true});
+        me().then(identity => this.setState({identity}));
+        return;
+      }
       this.setState({
         ready: true,
         error: true,
@@ -99,7 +117,7 @@ class App extends React.Component {
   }
 
   render() {
-    if (this.state.error) {
+    if (this.state.error && window.location.pathname !== '/login') {
       return (
         <Wrapper>
           <Panel>
@@ -112,27 +130,45 @@ class App extends React.Component {
 
     return (
       <Wrapper>
-        <Router>
-          <ScrollToTop></ScrollToTop>
-          <Navbar></Navbar>
-          <Switch>
-            <Route path="/accounts/:id" exact>
-              <Account></Account>
-            </Route>
-            <Route path="/accounts" exact>
-              <Accounts></Accounts>
-            </Route>
-            <Route path="/transactions" exact>
-              <Transactions></Transactions>
-            </Route>
-            <Route path="/new" exact>
-              <Create></Create>
-            </Route>
-            <Route path="/">
-              <Home></Home>
-            </Route>
-          </Switch>
-        </Router>
+        <SessionContext.Provider value={this.state.identity}>
+          <Router>
+            <ScrollToTop></ScrollToTop>
+            <Switch>
+              <Route path="/login" exact>
+                <Login></Login>
+              </Route>
+              <Route path="/">
+                <Navbar></Navbar>
+                <Switch>
+                  <Route path="/accounts/:id" exact>
+                    <Account></Account>
+                  </Route>
+                  <Route path="/accounts" exact>
+                    <Accounts></Accounts>
+                  </Route>
+                  <Route path="/transactions" exact>
+                    <Transactions></Transactions>
+                  </Route>
+                  <Route path="/contracts/new" exact>
+                    <ContractCreate></ContractCreate>
+                  </Route>
+                  <Route path="/contracts/:id" exact>
+                    <Contract></Contract>
+                  </Route>
+                  <Route path="/contracts" exact>
+                    <Contracts></Contracts>
+                  </Route>
+                  <Route path="/new" exact>
+                    <Create></Create>
+                  </Route>
+                  <Route path="/">
+                    <Home></Home>
+                  </Route>
+                </Switch>
+              </Route>
+            </Switch>
+          </Router>
+        </SessionContext.Provider>
       </Wrapper>
     );
   }
