@@ -124,6 +124,24 @@ class Ledger {
       .get(url(`/${this.name}/contracts/${id}/audit`), {params: {verify: 'true'}})
       .then(res => res.data.data); // {events, chain_valid}
   }
+
+  // --- lens (financial observability) ---
+
+  getLensOverview() {
+    return axios.get(url(`/${this.name}/lens/overview`)).then(res => res.data.data);
+  }
+
+  getLensFlows(limit) {
+    return axios.get(url(`/${this.name}/lens/flows`), {params: {limit: limit || 100}}).then(res => res.data.data);
+  }
+
+  getLensRollup() {
+    return axios.get(url(`/${this.name}/lens/rollup`)).then(res => res.data.data);
+  }
+
+  getLensTimeseries(account, asset) {
+    return axios.get(url(`/${this.name}/lens/timeseries`), {params: {account, asset}}).then(res => res.data.data);
+  }
 }
 
 // normalizes API errors: sharia errors carry {error, message, standard_ref},

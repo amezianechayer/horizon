@@ -23,6 +23,7 @@ import Login from './pages/Login.jsx';
 import Contracts from './pages/Contracts.jsx';
 import Contract from './pages/Contract.jsx';
 import ContractCreate from './pages/ContractCreate.jsx';
+import Lens from './pages/Lens.jsx';
 import ScrollToTop from './parts/Scroll.jsx';
 import Panel from './parts/Panel.jsx';
 
@@ -157,6 +158,9 @@ class App extends React.Component {
                   </Route>
                   <Route path="/contracts" exact>
                     <Contracts></Contracts>
+                  </Route>
+                  <Route path="/lens" exact>
+                    <Lens></Lens>
                   </Route>
                   <Route path="/new" exact>
                     <Create></Create>

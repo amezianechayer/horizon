@@ -135,6 +135,11 @@ function Navbar() {
               <span>Contracts</span>
             </Link>
           </li>
+          <li>
+            <Link to="/lens">
+              <span>Lens</span>
+            </Link>
+          </li>
         </ul>
         <div className="search">
           <input type="text"/>
