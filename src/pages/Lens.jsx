@@ -4,6 +4,8 @@ import ledger from '../lib/ledger';
 import Panel from '../parts/Panel.jsx';
 import Amount from '../parts/Amount.jsx';
 import StateBadge from '../parts/StateBadge.jsx';
+import FlowsTable from '../components/FlowsTable.jsx';
+import Sparkline from '../components/Sparkline.jsx';
 
 const Wrapper = styled.div`
   .page-header {
@@ -85,6 +87,9 @@ class Lens extends React.Component {
     this.state = {
       overview: null,
       rollup: null,
+      flows: [],
+      timeseries: [],
+      timeseriesLabel: '',
       loading: true,
       error: false,
     };
@@ -92,9 +97,26 @@ class Lens extends React.Component {
 
   componentDidMount() {
     const l = ledger();
-    Promise.all([l.getLensOverview(), l.getLensRollup()])
-      .then(([overview, rollup]) => {
-        this.setState({overview, rollup, loading: false});
+    Promise.all([l.getLensOverview(), l.getLensRollup(), l.getLensFlows(100)])
+      .then(([overview, rollup, flows]) => {
+        // Derive default account+asset for timeseries from top_accounts[0]
+        const topAccounts = (overview && overview.top_accounts) || [];
+        const topEntry = topAccounts[0];
+
+        this.setState({overview, rollup, flows: flows || [], loading: false});
+
+        if (topEntry && topEntry.account && topEntry.asset) {
+          l.getLensTimeseries(topEntry.account, topEntry.asset)
+            .then(timeseries => {
+              this.setState({
+                timeseries: timeseries || [],
+                timeseriesLabel: `${topEntry.account} (${topEntry.asset})`,
+              });
+            })
+            .catch(() => {
+              // timeseries failing is non-fatal; just leave empty
+            });
+        }
       })
       .catch(() => {
         this.setState({loading: false, error: true});
@@ -102,7 +124,7 @@ class Lens extends React.Component {
   }
 
   render() {
-    const {overview, rollup, loading, error} = this.state;
+    const {overview, rollup, flows, timeseries, timeseriesLabel, loading, error} = this.state;
 
     return (
       <Wrapper>
@@ -210,8 +232,32 @@ class Lens extends React.Component {
                 </Panel>
               </div>
 
-              {/* TODO Task 9: flows table (getLensFlows) */}
-              {/* TODO Task 9: timeseries chart (getLensTimeseries) */}
+              {/* Flows table */}
+              {!loading && (
+                <div className="mb24" style={{marginBottom: 24}}>
+                  <Panel>
+                    <div className="card-title">Flows</div>
+                    <FlowsTable flows={flows} />
+                  </Panel>
+                </div>
+              )}
+
+              {/* Timeseries sparkline */}
+              {!loading && timeseries.length >= 2 && (
+                <div style={{marginBottom: 24}}>
+                  <Panel>
+                    <div className="card-title">
+                      {'Flow over time'}
+                      {timeseriesLabel && (
+                        <span style={{fontWeight: 400, textTransform: 'none', opacity: 0.6, marginLeft: 6}}>
+                          — {timeseriesLabel}
+                        </span>
+                      )}
+                    </div>
+                    <Sparkline series={timeseries} />
+                  </Panel>
+                </div>
+              )}
             </>
           )}
         </div>
