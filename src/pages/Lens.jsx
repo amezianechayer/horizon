@@ -6,6 +6,8 @@ import Amount from '../parts/Amount.jsx';
 import StateBadge from '../parts/StateBadge.jsx';
 import FlowsTable from '../components/FlowsTable.jsx';
 import Sparkline from '../components/Sparkline.jsx';
+import FlowGraph from '../components/FlowGraph.jsx';
+import { assetsOf } from '../lib/buildGraph';
 
 const Wrapper = styled.div`
   .page-header {
@@ -90,6 +92,7 @@ class Lens extends React.Component {
       flows: [],
       timeseries: [],
       timeseriesLabel: '',
+      graphAsset: '',
       loading: true,
       error: false,
     };
@@ -103,7 +106,13 @@ class Lens extends React.Component {
         const topAccounts = (overview && overview.top_accounts) || [];
         const topEntry = topAccounts[0];
 
-        this.setState({overview, rollup, flows: flows || [], loading: false});
+        // Derive default graph asset: largest-volume asset from overview, else first from flows.
+        const volAssets = (overview && overview.volume_by_asset)
+          ? overview.volume_by_asset.slice().sort((a, b) => b.total - a.total)
+          : [];
+        const defaultAsset = (volAssets[0] && volAssets[0].asset) || assetsOf(flows || [])[0] || '';
+
+        this.setState({overview, rollup, flows: flows || [], graphAsset: defaultAsset, loading: false});
 
         if (topEntry && topEntry.account && topEntry.asset) {
           l.getLensTimeseries(topEntry.account, topEntry.asset)
@@ -124,7 +133,7 @@ class Lens extends React.Component {
   }
 
   render() {
-    const {overview, rollup, flows, timeseries, timeseriesLabel, loading, error} = this.state;
+    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, loading, error} = this.state;
 
     return (
       <Wrapper>
@@ -231,6 +240,27 @@ class Lens extends React.Component {
                   ))}
                 </Panel>
               </div>
+
+              {/* Flow graph */}
+              {!loading && flows.length > 0 && graphAsset && (
+                <div style={{marginBottom: 24}}>
+                  <Panel>
+                    <div className="card-title">
+                      Flow graph
+                      <span style={{marginLeft: 12, fontWeight: 400, textTransform: 'none', opacity: 0.7}}>
+                        <select
+                          value={graphAsset}
+                          onChange={e => this.setState({graphAsset: e.target.value})}
+                          style={{fontFamily: 'inherit', fontSize: 12, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer'}}
+                        >
+                          {assetsOf(flows).map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                      </span>
+                    </div>
+                    <FlowGraph flows={flows} asset={graphAsset} />
+                  </Panel>
+                </div>
+              )}
 
               {/* Flows table */}
               {!loading && (

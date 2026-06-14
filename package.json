@@ -10,6 +10,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "copy-webpack-plugin": "^6.0.4",
+    "d3": "^7",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-modal": "^3.11.2",
@@ -30,7 +31,6 @@
     "webpack-dev-server": "^3.11.0"
   },
   "resolutions": {
-  "minimatch": "3.0.8"
-}
-
+    "minimatch": "3.0.8"
+  }
 }
