@@ -7,6 +7,7 @@ import StateBadge from '../parts/StateBadge.jsx';
 import FlowsTable from '../components/FlowsTable.jsx';
 import Sparkline from '../components/Sparkline.jsx';
 import FlowGraph from '../components/FlowGraph.jsx';
+import GraphLegend from '../components/GraphLegend.jsx';
 import { assetsOf } from '../lib/buildGraph';
 
 const Wrapper = styled.div`
@@ -93,9 +94,11 @@ class Lens extends React.Component {
       timeseries: [],
       timeseriesLabel: '',
       graphAsset: '',
+      limit: 100,
       loading: true,
       error: false,
     };
+    this.setLimit = this.setLimit.bind(this);
   }
 
   componentDidMount() {
@@ -132,8 +135,19 @@ class Lens extends React.Component {
       });
   }
 
+  setLimit(n) {
+    this.setState({limit: n});
+    ledger().getLensFlows(n).then(flows => {
+      const assets = assetsOf(flows || []);
+      this.setState(prev => ({
+        flows: flows || [],
+        graphAsset: assets.indexOf(prev.graphAsset) !== -1 ? prev.graphAsset : (assets[0] || ''),
+      }));
+    }).catch(() => {/* non-fatal */});
+  }
+
   render() {
-    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, loading, error} = this.state;
+    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, limit, loading, error} = this.state;
 
     return (
       <Wrapper>
@@ -245,18 +259,14 @@ class Lens extends React.Component {
               {!loading && flows.length > 0 && graphAsset && (
                 <div style={{marginBottom: 24}}>
                   <Panel>
-                    <div className="card-title">
-                      Flow graph
-                      <span style={{marginLeft: 12, fontWeight: 400, textTransform: 'none', opacity: 0.7}}>
-                        <select
-                          value={graphAsset}
-                          onChange={e => this.setState({graphAsset: e.target.value})}
-                          style={{fontFamily: 'inherit', fontSize: 12, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer'}}
-                        >
-                          {assetsOf(flows).map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                      </span>
-                    </div>
+                    <div className="card-title">Flow graph</div>
+                    <GraphLegend
+                      assets={assetsOf(flows)}
+                      value={graphAsset}
+                      onChange={a => this.setState({graphAsset: a})}
+                      limit={limit}
+                      onLimitChange={this.setLimit}
+                    />
                     <FlowGraph flows={flows} asset={graphAsset} />
                   </Panel>
                 </div>
