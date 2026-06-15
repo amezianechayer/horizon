@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import styled, { keyframes } from 'styled-components';
-import { buildGraph, applyClustering } from '../lib/buildGraph';
+import { buildGraph, applyClustering, filterToBucket } from '../lib/buildGraph';
 import EdgeDetailPanel from './EdgeDetailPanel.jsx';
 
 const KIND_COLOR = {
@@ -55,7 +55,7 @@ const Wrapper = styled.div`
   }
 `;
 
-export default function FlowGraph({ flows, asset, animate, collapsed, onToggleKind }) {
+export default function FlowGraph({ flows, asset, animate, collapsed, onToggleKind, tBucket }) {
   const svgRef = useRef(null);
 
   const [hoveredEdge, setHoveredEdge] = useState(null);
@@ -63,9 +63,9 @@ export default function FlowGraph({ flows, asset, animate, collapsed, onToggleKi
   // Default animate to true
   const doAnimate = animate !== false;
 
-  // The main d3 effect — rebuilds whenever flows, asset, collapsed, or animate changes.
+  // The main d3 effect — rebuilds whenever flows, asset, collapsed, animate, or tBucket changes.
   useEffect(() => {
-    const full = buildGraph(flows, asset);
+    const full = tBucket ? filterToBucket(flows, asset, tBucket) : buildGraph(flows, asset);
     if (!svgRef.current || full.nodes.length === 0) return undefined;
 
     // Apply clustering on top of the full graph
@@ -231,9 +231,9 @@ export default function FlowGraph({ flows, asset, animate, collapsed, onToggleKi
       });
 
     return () => { simulation.stop(); };
-  }, [flows, asset, collapsed, doAnimate, onToggleKind]);
+  }, [flows, asset, collapsed, doAnimate, onToggleKind, tBucket]);
 
-  const full = buildGraph(flows, asset);
+  const full = tBucket ? filterToBucket(flows, asset, tBucket) : buildGraph(flows, asset);
   return (
     <Wrapper>
       {full.nodes.length === 0

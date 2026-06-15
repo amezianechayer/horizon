@@ -8,7 +8,8 @@ import FlowsTable from '../components/FlowsTable.jsx';
 import Sparkline from '../components/Sparkline.jsx';
 import FlowGraph from '../components/FlowGraph.jsx';
 import GraphLegend from '../components/GraphLegend.jsx';
-import { assetsOf, kindCounts } from '../lib/buildGraph';
+import TimeScrubber from '../components/TimeScrubber.jsx';
+import { assetsOf, kindCounts, bucketsOf } from '../lib/buildGraph';
 
 const Wrapper = styled.div`
   .page-header {
@@ -98,9 +99,13 @@ class Lens extends React.Component {
       limit: 100,
       loading: true,
       error: false,
+      bucketIndex: 0,
+      playing: false,
     };
+    this._playTimer = null;
     this.setLimit    = this.setLimit.bind(this);
     this.toggleKind  = this.toggleKind.bind(this);
+    this.togglePlay  = this.togglePlay.bind(this);
   }
 
   componentDidMount() {
@@ -120,7 +125,9 @@ class Lens extends React.Component {
         const defaultAsset = (volAssets[0] && volAssets[0].asset) || assetsOf(flows || [])[0] || '';
 
         const defaultCollapsed = defaultAsset ? this._defaultCollapsed(flows || [], defaultAsset) : [];
-        this.setState({overview, rollup, flows: flows || [], graphAsset: defaultAsset, collapsed: defaultCollapsed, loading: false});
+        const defaultBuckets = bucketsOf(flows || [], defaultAsset);
+        const defaultBucketIndex = defaultBuckets.length > 0 ? defaultBuckets.length - 1 : 0;
+        this.setState({overview, rollup, flows: flows || [], graphAsset: defaultAsset, collapsed: defaultCollapsed, loading: false, bucketIndex: defaultBucketIndex});
 
         if (topEntry && topEntry.account && topEntry.asset) {
           l.getLensTimeseries(topEntry.account, topEntry.asset)
@@ -143,6 +150,10 @@ class Lens extends React.Component {
 
   componentWillUnmount() {
     this._mounted = false;
+    if (this._playTimer) {
+      clearInterval(this._playTimer);
+      this._playTimer = null;
+    }
   }
 
   // Compute which kinds have > 12 members for the given flows+asset.
@@ -158,10 +169,13 @@ class Lens extends React.Component {
       const assets = assetsOf(flows || []);
       this.setState(prev => {
         const nextAsset = assets.indexOf(prev.graphAsset) !== -1 ? prev.graphAsset : (assets[0] || '');
+        const nextBuckets = bucketsOf(flows || [], nextAsset);
+        const nextBucketIndex = nextBuckets.length > 0 ? nextBuckets.length - 1 : 0;
         return {
           flows: flows || [],
           graphAsset: nextAsset,
           collapsed: nextAsset ? this._defaultCollapsed(flows || [], nextAsset) : [],
+          bucketIndex: nextBucketIndex,
         };
       });
     }).catch(() => {/* non-fatal */});
@@ -176,8 +190,45 @@ class Lens extends React.Component {
     });
   }
 
+  togglePlay() {
+    const { flows, graphAsset } = this.state;
+    const buckets = bucketsOf(flows, graphAsset);
+
+    if (this.state.playing) {
+      // Turn OFF
+      if (this._playTimer) {
+        clearInterval(this._playTimer);
+        this._playTimer = null;
+      }
+      this.setState({ playing: false });
+    } else {
+      // Turn ON
+      this._playTimer = setInterval(() => {
+        if (!this._mounted) {
+          clearInterval(this._playTimer);
+          this._playTimer = null;
+          return;
+        }
+        this.setState(prev => {
+          const nextBuckets = bucketsOf(prev.flows, prev.graphAsset);
+          const nextIndex = prev.bucketIndex + 1;
+          if (nextIndex >= nextBuckets.length) {
+            // Reached the end — stop
+            clearInterval(this._playTimer);
+            this._playTimer = null;
+            return { bucketIndex: nextBuckets.length > 0 ? nextBuckets.length - 1 : 0, playing: false };
+          }
+          return { bucketIndex: nextIndex };
+        });
+      }, 700);
+      this.setState({ playing: true });
+    }
+  }
+
   render() {
-    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, collapsed, limit, loading, error} = this.state;
+    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, collapsed, limit, loading, error, bucketIndex, playing} = this.state;
+    const buckets = bucketsOf(flows, graphAsset);
+    const tBucket = buckets.length > 0 ? buckets[bucketIndex] : undefined;
 
     return (
       <Wrapper>
@@ -293,10 +344,15 @@ class Lens extends React.Component {
                     <GraphLegend
                       assets={assetsOf(flows)}
                       value={graphAsset}
-                      onChange={a => this.setState({
-                        graphAsset: a,
-                        collapsed: a ? this._defaultCollapsed(flows, a) : [],
-                      })}
+                      onChange={a => {
+                        const nextBuckets = bucketsOf(flows, a);
+                        const nextBucketIndex = nextBuckets.length > 0 ? nextBuckets.length - 1 : 0;
+                        this.setState({
+                          graphAsset: a,
+                          collapsed: a ? this._defaultCollapsed(flows, a) : [],
+                          bucketIndex: nextBucketIndex,
+                        });
+                      }}
                       limit={limit}
                       onLimitChange={this.setLimit}
                       collapsed={collapsed}
@@ -307,6 +363,22 @@ class Lens extends React.Component {
                       asset={graphAsset}
                       collapsed={collapsed}
                       onToggleKind={this.toggleKind}
+                      tBucket={tBucket}
+                    />
+                    <TimeScrubber
+                      buckets={buckets}
+                      index={bucketIndex}
+                      onChange={i => {
+                        if (this.state.playing) {
+                          clearInterval(this._playTimer);
+                          this._playTimer = null;
+                          this.setState({ bucketIndex: i, playing: false });
+                        } else {
+                          this.setState({ bucketIndex: i });
+                        }
+                      }}
+                      playing={playing}
+                      onTogglePlay={this.togglePlay}
                     />
                   </Panel>
                 </div>
