@@ -202,7 +202,9 @@ class Lens extends React.Component {
       }
       this.setState({ playing: false });
     } else {
-      // Turn ON
+      // Turn ON. If the cursor is already at (or past) the last bucket — which is
+      // the default on load — restart from the beginning so play always replays.
+      const atEnd = buckets.length > 0 && this.state.bucketIndex >= buckets.length - 1;
       this._playTimer = setInterval(() => {
         if (!this._mounted) {
           clearInterval(this._playTimer);
@@ -221,7 +223,7 @@ class Lens extends React.Component {
           return { bucketIndex: nextIndex };
         });
       }, 700);
-      this.setState({ playing: true });
+      this.setState({ playing: true, bucketIndex: atEnd ? 0 : this.state.bucketIndex });
     }
   }
 
