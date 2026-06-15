@@ -104,9 +104,11 @@ class Lens extends React.Component {
   }
 
   componentDidMount() {
+    this._mounted = true;
     const l = ledger();
     Promise.all([l.getLensOverview(), l.getLensRollup(), l.getLensFlows(100)])
       .then(([overview, rollup, flows]) => {
+        if (!this._mounted) return;
         // Derive default account+asset for timeseries from top_accounts[0]
         const topAccounts = (overview && overview.top_accounts) || [];
         const topEntry = topAccounts[0];
@@ -123,6 +125,7 @@ class Lens extends React.Component {
         if (topEntry && topEntry.account && topEntry.asset) {
           l.getLensTimeseries(topEntry.account, topEntry.asset)
             .then(timeseries => {
+              if (!this._mounted) return;
               this.setState({
                 timeseries: timeseries || [],
                 timeseriesLabel: `${topEntry.account} (${topEntry.asset})`,
@@ -134,8 +137,12 @@ class Lens extends React.Component {
         }
       })
       .catch(() => {
-        this.setState({loading: false, error: true});
+        if (this._mounted) this.setState({loading: false, error: true});
       });
+  }
+
+  componentWillUnmount() {
+    this._mounted = false;
   }
 
   // Compute which kinds have > 12 members for the given flows+asset.
@@ -147,6 +154,7 @@ class Lens extends React.Component {
   setLimit(n) {
     this.setState({limit: n});
     ledger().getLensFlows(n).then(flows => {
+      if (!this._mounted) return;
       const assets = assetsOf(flows || []);
       this.setState(prev => {
         const nextAsset = assets.indexOf(prev.graphAsset) !== -1 ? prev.graphAsset : (assets[0] || '');
