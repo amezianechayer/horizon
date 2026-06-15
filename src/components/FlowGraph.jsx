@@ -199,21 +199,32 @@ export default function FlowGraph({ flows, asset, animate }) {
       });
 
     // --- Drag ---
-    node.call(d3.drag()
-      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
-      .on('end',   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
-
-    // --- Meta-node click: expand (remove its kind from collapsed) ---
-    node.on('click', (e, d) => {
-      e.stopPropagation();
-      if (!d.meta) return;
-      setCollapsed(prev => {
-        const next = new Set(prev);
-        next.delete(d.kind);
-        return next;
+    // d3-drag suppresses the native click event, so we detect a "click" (no movement)
+    // inside the drag handlers: dragMoved=false means no drag event fired → it was a click.
+    let dragMoved = false;
+    const drag = d3.drag()
+      .on('start', (e, d) => {
+        dragMoved = false;
+        if (!e.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (e, d) => {
+        dragMoved = true;
+        d.fx = e.x; d.fy = e.y;
+      })
+      .on('end', (e, d) => {
+        if (!e.active) simulation.alphaTarget(0);
+        d.fx = null; d.fy = null;
+        if (!dragMoved && d.meta) {
+          // No movement → treat as a click → expand the collapsed cluster
+          setCollapsed(prev => {
+            const next = new Set(prev);
+            next.delete(d.kind);
+            return next;
+          });
+        }
       });
-    });
+    node.call(drag);
 
     // --- Edge hover ---
     link
