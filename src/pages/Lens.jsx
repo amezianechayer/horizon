@@ -195,7 +195,7 @@ class Lens extends React.Component {
                     <span className="opacity-05">No data</span>
                   )}
                   {!loading && (overview ? (overview.top_accounts || []).slice(0, 5) : []).map((entry, i) => (
-                    <div className="stat-row" key={entry.account || i}>
+                    <div className="stat-row" key={(entry.account + ':' + entry.asset) || i}>
                       <span className="stat-label" style={{fontFamily: 'Roboto Mono, monospace', fontSize: 12}}>
                         {entry.account}
                       </span>
