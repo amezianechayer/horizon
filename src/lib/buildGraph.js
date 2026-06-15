@@ -60,3 +60,48 @@ export function filterToBucket(flows, asset, t) {
   const g = toGraph(rows);
   return {nodes: g.nodes, links: g.links, buckets: bucketsOf(flows, asset)};
 }
+
+// Collapse the given kinds into single meta-nodes; aggregate their edges.
+// collapsedKinds: array (or Set) of kind strings. Returns a new graph.
+export function applyClustering(graph, collapsedKinds) {
+  const collapsed = new Set(collapsedKinds || []);
+  if (collapsed.size === 0) return graph;
+
+  const metaId = (kind) => '__cluster__:' + kind;
+  // map a node id -> its kind, for remapping links
+  const kindById = {};
+  for (const n of graph.nodes) kindById[n.id] = n.kind;
+
+  const idFor = (rawId) => {
+    const k = kindById[rawId];
+    return collapsed.has(k) ? metaId(k) : rawId;
+  };
+
+  const nodeMap = {};
+  for (const n of graph.nodes) {
+    if (collapsed.has(n.kind)) {
+      const id = metaId(n.kind);
+      if (!nodeMap[id]) nodeMap[id] = {id, kind: n.kind, volume: 0, meta: true, members: 0};
+      nodeMap[id].volume += n.volume;
+      nodeMap[id].members += 1;
+    } else {
+      nodeMap[n.id] = {id: n.id, kind: n.kind, volume: n.volume};
+    }
+  }
+
+  const linkMap = {};
+  for (const l of graph.links) {
+    // links may carry either string ids or resolved node objects (after d3 mutates them)
+    const rawS = (l.source && l.source.id) ? l.source.id : l.source;
+    const rawT = (l.target && l.target.id) ? l.target.id : l.target;
+    const s = idFor(rawS);
+    const t = idFor(rawT);
+    if (s === t) continue; // drop intra-cluster self-loops
+    const key = s + ' ' + t;
+    if (!linkMap[key]) linkMap[key] = {source: s, target: t, amount: 0, count: 0};
+    linkMap[key].amount += l.amount;
+    linkMap[key].count += l.count;
+  }
+
+  return {nodes: Object.values(nodeMap), links: Object.values(linkMap), buckets: graph.buckets};
+}
