@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import styled, { keyframes } from 'styled-components';
 import { buildGraph, applyClustering } from '../lib/buildGraph';
@@ -55,41 +55,13 @@ const Wrapper = styled.div`
   }
 `;
 
-// Compute which kinds should be collapsed by default: those with > 12 members.
-function defaultCollapsed(fullGraph) {
-  const counts = {};
-  for (const n of fullGraph.nodes) {
-    counts[n.kind] = (counts[n.kind] || 0) + 1;
-  }
-  return new Set(Object.keys(counts).filter(k => counts[k] > 12));
-}
-
-export default function FlowGraph({ flows, asset, animate }) {
-  const svgRef     = useRef(null);
-  const lastAsset  = useRef(null);
+export default function FlowGraph({ flows, asset, animate, collapsed, onToggleKind }) {
+  const svgRef = useRef(null);
 
   const [hoveredEdge, setHoveredEdge] = useState(null);
 
-  // collapsed: Set of kind strings that are currently collapsed into meta-nodes.
-  // We initialise with an empty set; a separate effect seeds defaults when asset changes.
-  const [collapsed, setCollapsed]   = useState(() => new Set());
-
   // Default animate to true
   const doAnimate = animate !== false;
-
-  // When asset changes, recompute the default collapsed set.
-  // We do NOT reset on every render — only when the asset actually changes.
-  useEffect(() => {
-    if (asset === lastAsset.current) return;
-    lastAsset.current = asset;
-    const full = buildGraph(flows, asset);
-    setCollapsed(defaultCollapsed(full));
-  }, [flows, asset]);
-
-  // Stable callback refs for toggle actions (avoids stale closures in d3 handlers).
-  // We store the latest collapsed set in a ref so d3 event handlers can read it.
-  const collapsedRef = useRef(collapsed);
-  useEffect(() => { collapsedRef.current = collapsed; }, [collapsed]);
 
   // The main d3 effect — rebuilds whenever flows, asset, collapsed, or animate changes.
   useEffect(() => {
@@ -97,7 +69,7 @@ export default function FlowGraph({ flows, asset, animate }) {
     if (!svgRef.current || full.nodes.length === 0) return undefined;
 
     // Apply clustering on top of the full graph
-    const g = applyClustering(full, [...collapsed]);
+    const g = applyClustering(full, collapsed || []);
 
     const svgEl  = svgRef.current;
     const svg    = d3.select(svgEl);
@@ -138,12 +110,7 @@ export default function FlowGraph({ flows, asset, animate }) {
     svg.call(zoomBehavior);
 
     svg.on('dblclick.zoom', null); // disable default d3 dblclick-to-zoom on the svg
-    svg.on('dblclick', (e) => {
-      // Only fire if the click is directly on the svg background (not a node)
-      if (e.target !== svgEl && e.target.tagName !== 'svg') return;
-      const full2 = buildGraph(flows, asset);
-      setCollapsed(defaultCollapsed(full2));
-    });
+    svg.on('dblclick', null); // double-click expand is now driven by the legend
 
     svg.append('defs').append('marker')
       .attr('id', 'fg-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 22)
@@ -216,12 +183,8 @@ export default function FlowGraph({ flows, asset, animate }) {
         if (!e.active) simulation.alphaTarget(0);
         d.fx = null; d.fy = null;
         if (!dragMoved && d.meta) {
-          // No movement → treat as a click → expand the collapsed cluster
-          setCollapsed(prev => {
-            const next = new Set(prev);
-            next.delete(d.kind);
-            return next;
-          });
+          // No movement → treat as a click → expand the collapsed cluster (bonus path)
+          if (onToggleKind) onToggleKind(d.kind);
         }
       });
     node.call(drag);
@@ -268,7 +231,7 @@ export default function FlowGraph({ flows, asset, animate }) {
       });
 
     return () => { simulation.stop(); };
-  }, [flows, asset, collapsed, doAnimate]);
+  }, [flows, asset, collapsed, doAnimate, onToggleKind]);
 
   const full = buildGraph(flows, asset);
   return (
@@ -280,7 +243,7 @@ export default function FlowGraph({ flows, asset, animate }) {
             <svg ref={svgRef} />
             <EdgeDetailPanel edge={hoveredEdge} />
             <div className="hint">
-              Clic sur un groupe pour le développer · Double-clic sur le fond pour tout regrouper
+              Clic sur un groupe pour le développer · Utilisez la légende pour grouper/dégrouper
             </div>
           </>
         )

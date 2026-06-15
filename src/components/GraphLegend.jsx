@@ -29,12 +29,27 @@ const Bar = styled.div`
   border-bottom: 1px solid rgba(0,0,0,0.07);
 `;
 
-const Swatch = styled.span`
+const KindChip = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #444;
+  color: ${p => p.isCollapsed ? '#888' : '#444'};
+  background: ${p => p.isCollapsed ? 'rgba(0,0,0,0.05)' : 'transparent'};
+  border: 1px solid ${p => p.isCollapsed ? 'rgba(0,0,0,0.18)' : 'transparent'};
+  border-radius: 12px;
+  padding: 2px 8px 2px 5px;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: ${p => p.isCollapsed ? 0.72 : 1};
+  transition: background 0.12s, opacity 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: rgba(0,0,0,0.07);
+    border-color: rgba(0,0,0,0.2);
+  }
+
+  &:focus { outline: none; box-shadow: 0 0 0 2px rgba(19,224,126,0.4); }
 `;
 
 const Dot = styled.span`
@@ -98,21 +113,35 @@ const RangeVal = styled.span`
  * Presentational component: horizontal legend bar.
  *
  * Props:
- *   assets   — string[]
- *   value    — string (selected asset)
- *   onChange — (asset: string) => void
- *   limit    — number
+ *   assets        — string[]
+ *   value         — string (selected asset)
+ *   onChange      — (asset: string) => void
+ *   limit         — number
  *   onLimitChange — (n: number) => void
+ *   collapsed     — string[] of kind strings currently collapsed
+ *   onToggleKind  — (kind: string) => void
  */
-export default function GraphLegend({ assets, value, onChange, limit, onLimitChange }) {
+export default function GraphLegend({ assets, value, onChange, limit, onLimitChange, collapsed, onToggleKind }) {
+  const collapsedSet = new Set(collapsed || []);
   return (
     <Bar>
-      {KIND_LABELS.map(([kind, label]) => (
-        <Swatch key={kind}>
-          <Dot color={KIND_COLOR[kind]} />
-          {label}
-        </Swatch>
-      ))}
+      {KIND_LABELS.map(([kind, label]) => {
+        const isCollapsed = collapsedSet.has(kind);
+        return (
+          <KindChip
+            key={kind}
+            type="button"
+            isCollapsed={isCollapsed}
+            onClick={() => onToggleKind && onToggleKind(kind)}
+            title={isCollapsed ? `Ungroup ${label} nodes` : `Group ${label} nodes into a cluster`}
+          >
+            <Dot color={KIND_COLOR[kind]} />
+            {label}
+            {isCollapsed && <span style={{fontSize: 10, marginLeft: 2, opacity: 0.8}}>&#8853;</span>}
+          </KindChip>
+        );
+      })}
+      <span style={{fontSize: 11, color: '#aaa', alignSelf: 'center'}}>click a type to group/ungroup</span>
 
       <Divider />
 

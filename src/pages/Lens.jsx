@@ -8,7 +8,7 @@ import FlowsTable from '../components/FlowsTable.jsx';
 import Sparkline from '../components/Sparkline.jsx';
 import FlowGraph from '../components/FlowGraph.jsx';
 import GraphLegend from '../components/GraphLegend.jsx';
-import { assetsOf } from '../lib/buildGraph';
+import { assetsOf, kindCounts } from '../lib/buildGraph';
 
 const Wrapper = styled.div`
   .page-header {
@@ -94,11 +94,13 @@ class Lens extends React.Component {
       timeseries: [],
       timeseriesLabel: '',
       graphAsset: '',
+      collapsed: [],
       limit: 100,
       loading: true,
       error: false,
     };
-    this.setLimit = this.setLimit.bind(this);
+    this.setLimit    = this.setLimit.bind(this);
+    this.toggleKind  = this.toggleKind.bind(this);
   }
 
   componentDidMount() {
@@ -115,7 +117,8 @@ class Lens extends React.Component {
           : [];
         const defaultAsset = (volAssets[0] && volAssets[0].asset) || assetsOf(flows || [])[0] || '';
 
-        this.setState({overview, rollup, flows: flows || [], graphAsset: defaultAsset, loading: false});
+        const defaultCollapsed = defaultAsset ? this._defaultCollapsed(flows || [], defaultAsset) : [];
+        this.setState({overview, rollup, flows: flows || [], graphAsset: defaultAsset, collapsed: defaultCollapsed, loading: false});
 
         if (topEntry && topEntry.account && topEntry.asset) {
           l.getLensTimeseries(topEntry.account, topEntry.asset)
@@ -135,19 +138,38 @@ class Lens extends React.Component {
       });
   }
 
+  // Compute which kinds have > 12 members for the given flows+asset.
+  _defaultCollapsed(flows, asset) {
+    const counts = kindCounts(flows, asset);
+    return Object.keys(counts).filter(k => counts[k] > 12);
+  }
+
   setLimit(n) {
     this.setState({limit: n});
     ledger().getLensFlows(n).then(flows => {
       const assets = assetsOf(flows || []);
-      this.setState(prev => ({
-        flows: flows || [],
-        graphAsset: assets.indexOf(prev.graphAsset) !== -1 ? prev.graphAsset : (assets[0] || ''),
-      }));
+      this.setState(prev => {
+        const nextAsset = assets.indexOf(prev.graphAsset) !== -1 ? prev.graphAsset : (assets[0] || '');
+        return {
+          flows: flows || [],
+          graphAsset: nextAsset,
+          collapsed: nextAsset ? this._defaultCollapsed(flows || [], nextAsset) : [],
+        };
+      });
     }).catch(() => {/* non-fatal */});
   }
 
+  toggleKind(kind) {
+    this.setState(prev => {
+      const next = prev.collapsed.indexOf(kind) !== -1
+        ? prev.collapsed.filter(k => k !== kind)
+        : prev.collapsed.concat(kind);
+      return {collapsed: next};
+    });
+  }
+
   render() {
-    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, limit, loading, error} = this.state;
+    const {overview, rollup, flows, timeseries, timeseriesLabel, graphAsset, collapsed, limit, loading, error} = this.state;
 
     return (
       <Wrapper>
@@ -263,11 +285,21 @@ class Lens extends React.Component {
                     <GraphLegend
                       assets={assetsOf(flows)}
                       value={graphAsset}
-                      onChange={a => this.setState({graphAsset: a})}
+                      onChange={a => this.setState({
+                        graphAsset: a,
+                        collapsed: a ? this._defaultCollapsed(flows, a) : [],
+                      })}
                       limit={limit}
                       onLimitChange={this.setLimit}
+                      collapsed={collapsed}
+                      onToggleKind={this.toggleKind}
                     />
-                    <FlowGraph flows={flows} asset={graphAsset} />
+                    <FlowGraph
+                      flows={flows}
+                      asset={graphAsset}
+                      collapsed={collapsed}
+                      onToggleKind={this.toggleKind}
+                    />
                   </Panel>
                 </div>
               )}

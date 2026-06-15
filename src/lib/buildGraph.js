@@ -61,6 +61,15 @@ export function filterToBucket(flows, asset, t) {
   return {nodes: g.nodes, links: g.links, buckets: bucketsOf(flows, asset)};
 }
 
+// Returns { kind: memberCount } for the full graph of the given asset.
+// Used by Lens to compute which kinds should be collapsed by default (> 12 members).
+export function kindCounts(flows, asset) {
+  const g = buildGraph(flows, asset);
+  const counts = {};
+  for (const n of g.nodes) counts[n.kind] = (counts[n.kind] || 0) + 1;
+  return counts;
+}
+
 // Collapse the given kinds into single meta-nodes; aggregate their edges.
 // collapsedKinds: array (or Set) of kind strings. Returns a new graph.
 export function applyClustering(graph, collapsedKinds) {
